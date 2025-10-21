@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eddy Portafolio - Ingeniero Informático & Esports Pro</title>
+    <title>Eddy Orosco Portafolio - Ingeniero de Software & Analista de Videojuegos</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -142,14 +142,15 @@
             </div>
             <div class="hero-right">
                 <h1 class="hero-title">
-                    <span class="title-main">Ingeniero Informático</span>
-                    <span class="title-accent">& Developer</span>
+                    <span class="title-main">Ingeniero de Software</span>
+                    <span class="title-accent">& Analista de Videojuegos</span>
                 </h1>
                 <p class="hero-subtitle">
                     Transformando ideas en soluciones digitales innovadoras con IA y automatización
                 </p>
                 <div class="hero-buttons">
-                    <a href="#" class="btn btn-primary" id="download-cv">
+                    <!-- CAMBIO: Enlace al CV actualizado -->
+                    <a href="EDDY Arnold OROSCO PRADA En.pdf" class="btn btn-primary" id="download-cv" download>
                         <i class="fas fa-download"></i>
                         Descargar CV
                     </a>
@@ -164,25 +165,23 @@
         <div class="hero-content esports-only" id="hero-esports">
             <div class="hero-left">
                 <div class="hero-avatar">
-                    <img src="https://via.placeholder.com/200x200/1a1a2e/ff6b6b?text=G" alt="Gamer Avatar" class="avatar-img" id="avatar-esports">
+                    <!-- CAMBIO: Imagen de avatar actualizada para no usar placeholder -->
+                    <img src="image.png" alt="Gamer Avatar" class="avatar-img" id="avatar-esports">
                     <div class="avatar-ring esports-ring"></div>
                 </div>
             </div>
             <div class="hero-right">
                 <h1 class="hero-title">
                     <span class="title-main">Pro Gamer</span>
-                    <span class="title-accent">& Esports Player</span>
+                    <span class="title-accent">& Team Captain</span>
                 </h1>
-                <p class="hero-subtitle">
-                    De las batallas virtuales en Dota 2 a conquistar el competitivo de LATAM
-                </p>
                 <div class="hero-stats">
                     <div class="hero-stat">
                         <span class="stat-number">5+</span>
                         <span class="stat-label">Años Pro</span>
                     </div>
                     <div class="hero-stat">
-                        <span class="stat-number">Top 10</span>
+                        <span class="stat-number">Top</span>
                         <span class="stat-label">LATAM</span>
                     </div>
                     <div class="hero-stat">
@@ -202,148 +201,155 @@
                 </div>
             </div>
         </div>
-
-        </div>
+    </div>
 </section>
 
     <!-- About Section -->
-    <section id="about" class="about section engineer-only">
+    <section id="about" class="about section engineer-only" role="main" aria-labelledby="about-title">
         <div class="container">
-            <h2 class="section-title">Sobre Mí</h2>
-            <div class="about-content">
+            <h2 id="about-title" class="section-title">Sobre Mí</h2>
+            <article class="about-content" itemscope itemtype="https://schema.org/Person">
                 <div class="about-text">
-                    <p class="about-intro">
-                        Ingeniero Informático especializado en desarrollo web, IA y automatización. 
-                        Combino precisión técnica con creatividad estratégica.
+                    <p class="about-intro" itemprop="description">
+                        Ingeniero de Software con una perspectiva única forjada en más de 5 años de competencia en Dota 2 profesional. Combino la precisión técnica con la estrategia y liderazgo del más alto nivel competitivo.
                     </p>
                     
-
                     <!-- Servicios -->
-                    <div class="services-section">
-                        <h3>Servicios</h3>
-                        <div class="services-grid-compact">
-                            <div class="service-item">
-                                <i class="fas fa-code"></i>
-                                <div>
-                                    <h4>Desarrollo Web</h4>
-                                    <p>Aplicaciones modernas y responsivas</p>
+                    <section class="services-section" aria-labelledby="services-title">
+                        <h3 id="services-title">Servicios</h3>
+                        <ul class="services-grid-compact" role="list">
+                            <li class="service-item" role="listitem" tabindex="0" aria-describedby="service-fullstack-desc">
+                                <i class="fas fa-code" aria-hidden="true"></i>
+                                <div class="service-content">
+                                    <h4 itemprop="knowsAbout">Desarrollo Full-Stack</h4>
+                                    <p id="service-fullstack-desc">Soluciones web y móviles integradas.</p>
                                 </div>
-                            </div>
-                            <div class="service-item">
-                                <i class="fas fa-robot"></i>
-                                <div>
-                                    <h4>Integración IA</h4>
-                                    <p>RAG y chatbots inteligentes</p>
+                            </li>
+                            <li class="service-item" role="listitem" tabindex="0" aria-describedby="service-ai-desc">
+                                <i class="fas fa-robot" aria-hidden="true"></i>
+                                <div class="service-content">
+                                    <h4 itemprop="knowsAbout">Desarrollo con IA</h4>
+                                    <p id="service-ai-desc">Modelos de IA y sistemas inteligentes.</p>
                                 </div>
-                            </div>
-                            <div class="service-item">
-                                <i class="fas fa-cogs"></i>
-                                <div>
-                                    <h4>Automatización</h4>
-                                    <p>Procesos empresariales optimizados</p>
+                            </li>
+                            <li class="service-item" role="listitem" tabindex="0" aria-describedby="service-analysis-desc">
+                                <i class="fas fa-cogs" aria-hidden="true"></i>
+                                <div class="service-content">
+                                    <h4 itemprop="knowsAbout">Análisis de Sistemas</h4>
+                                    <p id="service-analysis-desc">Optimización y modernización de flujos.</p>
                                 </div>
-                            </div>
-                            <div class="service-item">
-                                <i class="fas fa-chart-line"></i>
-                                <div>
-                                    <h4>Consultoría</h4>
-                                    <p>Arquitectura y optimización</p>
+                            </li>
+                            <li class="service-item" role="listitem" tabindex="0" aria-describedby="service-gaming-desc">
+                                <i class="fas fa-gamepad" aria-hidden="true"></i>
+                                <div class="service-content">
+                                    <h4 itemprop="knowsAbout">Análisis de Videojuegos</h4>
+                                    <p id="service-gaming-desc">Mecánicas, diseño y experiencia de usuario.</p>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </li>
+                        </ul>
+                    </section>
 
-                    <div class="about-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">3+</span>
-                            <span class="stat-label">Años Experiencia</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">15+</span>
+                    <!-- Estadísticas -->
+                    <section class="about-stats" aria-labelledby="stats-title">
+                        <h3 id="stats-title" class="sr-only">Estadísticas Profesionales</h3>
+                        <div class="stat-item" role="img" aria-label="15 o más proyectos completados">
+                            <span class="stat-number" aria-hidden="true">15+</span>
                             <span class="stat-label">Proyectos</span>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-number">5+</span>
-                            <span class="stat-label">Tecnologías</span>
+                        <div class="stat-item" role="img" aria-label="5 o más tecnologías principales dominadas">
+                            <span class="stat-number" aria-hidden="true">5+</span>
+                            <span class="stat-label">Tecnologías Core</span>
                         </div>
-                    </div>
+                    </section>
                 </div>
-
-            </div>
+            </article>
         </div>
     </section>
 
     <!-- Skills Section - Full Width -->
-    <section class="skills-section-fullwidth engineer-only">
+    <section class="skills-section-fullwidth engineer-only" role="complementary" aria-labelledby="skills-title">
         <div class="container-fullwidth">
-            <h2 class="section-title">Habilidades Técnicas</h2>
-            <div class="cyberpunk-interface-new">
+            <h2 id="skills-title" class="section-title">Habilidades Técnicas</h2>
+            <div class="cyberpunk-interface-new" role="application" aria-label="Sistema interactivo de habilidades técnicas">
                 <!-- Panel Izquierdo - Hexágono Mejorado -->
-                <div class="hexagon-container-new">
-                    <div class="central-level">
-                        <span class="central-number">7</span>
+                <div class="hexagon-container-new" role="group" aria-labelledby="hexagon-title">
+                    <h3 id="hexagon-title" class="sr-only">Selector de Habilidades</h3>
+                    <div class="central-level" role="img" aria-label="Nivel central 7">
+                        <span class="central-number" aria-hidden="true">7</span>
                     </div>
-                    <div class="skill-hexagon">
-                        <div class="hex-skill top" data-skill="frontend" data-level="20">
+                    <nav class="skill-hexagon" role="tablist" aria-label="Navegación de habilidades técnicas">
+                        <button class="hex-skill top" role="tab" data-skill="frontend" data-level="20" 
+                                aria-controls="skill-detail" aria-selected="false" tabindex="-1"
+                                aria-label="Frontend, nivel 20">
                             <div class="hex-node">
-                                <i class="fab fa-react hex-icon"></i>
-                                <div class="hex-level">20</div>
+                                <i class="fab fa-react hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">20</div>
                             </div>
                             <div class="hex-label">
                                 <span class="hex-name">FRONTEND</span>
                             </div>
-                        </div>
-                        <div class="hex-skill top-right" data-skill="backend" data-level="18">
+                        </button>
+                        <button class="hex-skill top-right" role="tab" data-skill="backend" data-level="18"
+                                aria-controls="skill-detail" aria-selected="false" tabindex="-1"
+                                aria-label="Backend, nivel 18">
                             <div class="hex-node">
-                                <i class="fab fa-python hex-icon"></i>
-                                <div class="hex-level">18</div>
+                                <i class="fab fa-python hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">18</div>
                             </div>
                             <div class="hex-label">
                                 <span class="hex-name">BACKEND</span>
                             </div>
-                        </div>
-                        <div class="hex-skill bottom-right active" data-skill="ia" data-level="22">
+                        </button>
+                        <button class="hex-skill bottom-right active" role="tab" data-skill="ia" data-level="22"
+                                aria-controls="skill-detail" aria-selected="true" tabindex="0"
+                                aria-label="Inteligencia Artificial y Desarrollo, nivel 22">
                             <div class="hex-node">
-                                <i class="fas fa-robot hex-icon"></i>
-                                <div class="hex-level">22</div>
+                                <i class="fas fa-robot hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">22</div>
                             </div>
                             <div class="hex-label">
-                                <span class="hex-name">IA & RAG</span>
+                                <span class="hex-name">IA & DEV</span>
                             </div>
-                        </div>
-                        <div class="hex-skill bottom" data-skill="automation" data-level="24">
+                        </button>
+                        <button class="hex-skill bottom" role="tab" data-skill="automation" data-level="24"
+                                aria-controls="skill-detail" aria-selected="false" tabindex="-1"
+                                aria-label="Arquitectura de sistemas, nivel 24">
                             <div class="hex-node">
-                                <i class="fas fa-cogs hex-icon"></i>
-                                <div class="hex-level">24</div>
+                                <i class="fas fa-cogs hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">24</div>
                             </div>
                             <div class="hex-label">
-                                <span class="hex-name">AUTOMATIZACIÓN</span>
+                                <span class="hex-name">ARQUITECTURA</span>
                             </div>
-                        </div>
-                        <div class="hex-skill bottom-left" data-skill="database" data-level="16">
+                        </button>
+                        <button class="hex-skill bottom-left" role="tab" data-skill="database" data-level="16"
+                                aria-controls="skill-detail" aria-selected="false" tabindex="-1"
+                                aria-label="Bases de datos, nivel 16">
                             <div class="hex-node">
-                                <i class="fas fa-database hex-icon"></i>
-                                <div class="hex-level">16</div>
+                                <i class="fas fa-database hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">16</div>
                             </div>
                             <div class="hex-label">
                                 <span class="hex-name">DATABASES</span>
                             </div>
-                        </div>
-                        <div class="hex-skill top-left" data-skill="cloud" data-level="19">
+                        </button>
+                        <button class="hex-skill top-left" role="tab" data-skill="analysis" data-level="19"
+                                aria-controls="skill-detail" aria-selected="false" tabindex="-1"
+                                aria-label="Análisis de videojuegos, nivel 19">
                             <div class="hex-node">
-                                <i class="fas fa-cloud hex-icon"></i>
-                                <div class="hex-level">19</div>
+                                <i class="fas fa-gamepad hex-icon" aria-hidden="true"></i>
+                                <div class="hex-level" aria-hidden="true">19</div>
                             </div>
                             <div class="hex-label">
-                                <span class="hex-name">CLOUD</span>
+                                <span class="hex-name">GAME ANALYSIS</span>
                             </div>
-                        </div>
-                    </div>
+                        </button>
+                    </nav>
                 </div>
 
                 <!-- Panel Derecho - Detalle de Atributo -->
-                <div class="skill-detail-panel-new">
-                    <div class="selected-skill" id="selected-skill">
+                <aside class="skill-detail-panel-new" role="tabpanel" id="skill-detail" aria-labelledby="skill-title-display">
+                    <article class="selected-skill" id="selected-skill">
                         <div class="skill-header">
                             <div class="skill-level-display">
                                 <span class="level-number" id="skill-level-num">22</span>
@@ -354,39 +360,42 @@
                                 <span class="skill-badge">2</span>
                             </div>
                         </div>
-                        <h4 class="skill-title" id="skill-title">IA & RAG</h4>
+                        <h4 class="skill-title" id="skill-title-display">IA & DEV</h4>
                         <p class="skill-description" id="skill-description">
                             La IA determina tu capacidad de crear sistemas inteligentes y procesamiento de datos.
                         </p>
-                        <div class="skill-bonuses" id="skill-bonuses">
-                            <div class="bonus-item">Aumenta en un 15% la eficiencia de procesamiento</div>
-                            <div class="bonus-item">Mejora en un 25% la precisión de respuestas</div>
-                            <div class="bonus-item">Reduce en un 30% el tiempo de entrenamiento</div>
-                            <div class="bonus-item">Aumenta la capacidad de RAG avanzado</div>
-                        </div>
-                        <div class="skill-actions">
+                        <section class="skill-bonuses" id="skill-bonuses" aria-labelledby="bonuses-title">
+                            <h5 id="bonuses-title" class="sr-only">Beneficios de la habilidad</h5>
+                            <ul role="list">
+                                <li class="bonus-item">Aumenta en un 15% la eficiencia de procesamiento</li>
+                                <li class="bonus-item">Mejora en un 25% la precisión de respuestas</li>
+                                <li class="bonus-item">Reduce en un 30% el tiempo de entrenamiento</li>
+                                <li class="bonus-item">Aumenta la capacidad de RAG avanzado</li>
+                            </ul>
+                        </section>
+                        <div class="skill-actions" role="group" aria-label="Acciones de habilidad">
                             <div class="action-hint">
-                                <span class="action-key">F</span>
+                                <kbd class="action-key" aria-label="Tecla F">F</kbd>
                                 <span>MANTÉN PARA FIJAR</span>
                             </div>
                         </div>
                         
                         <!-- Habilidades Relacionadas integradas -->
-                        <div class="related-skills-integrated">
-                            <h5>Habilidades Relacionadas</h5>
-                            <div id="related-skills">
-                                <div class="related-skill">
+                        <section class="related-skills-integrated" aria-labelledby="related-skills-title">
+                            <h5 id="related-skills-title">Habilidades Relacionadas</h5>
+                            <ul id="related-skills" role="list">
+                                <li class="related-skill">
                                     <span class="related-name">Machine Learning</span>
-                                    <span class="related-level">5</span>
-                                </div>
-                                <div class="related-skill">
+                                    <span class="related-level" aria-label="Nivel 5">5</span>
+                                </li>
+                                <li class="related-skill">
                                     <span class="related-name">Data Processing</span>
-                                    <span class="related-level">4</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                                    <span class="related-level" aria-label="Nivel 4">4</span>
+                                </li>
+                            </ul>
+                        </section>
+                    </article>
+                </aside>
             </div>
         </div>
     </section>
@@ -395,12 +404,13 @@
     <!-- Esports Story Section - Esports Mode -->
     <section id="esports-story" class="about section esports-only">
         <div class="container">
-            <h2 class="section-title">Mi Historia</h2>
+
             <div class="about-content">
                 <div class="about-text">
+                    <!-- CAMBIO: Rol actualizado a Hard Support (Position 5) -->
                     <p class="about-intro">
-                        Jugador profesional de Dota 2 con 5+ años compitiendo en LATAM. 
-                        Position 1 Carry y Team Captain especializado en late-game strategy.
+                        Jugador profesional de Dota 2 con más de 5 años compitiendo en LATAM.
+                        Especializado como Team Captain y Hard Support (Posición 5), liderando la estrategia y coordinación del equipo.
                     </p>
                     
                     <!-- Equipos Principales -->
@@ -410,15 +420,15 @@
                             <div class="service-item">
                                 <i class="fas fa-shield-alt"></i>
                                 <div>
-                                    <h4>Thunder Esports</h4>
-                                    <p>Team Captain · Top 5 LATAM</p>
+                                    <h4>Equipos Profesionales</h4>
+                                    <p>Múltiples equipos en el circuito sudamericano</p>
                                 </div>
                             </div>
                             <div class="service-item">
                                 <i class="fas fa-bolt"></i>
                                 <div>
-                                    <h4>Lightning Gaming</h4>
-                                    <p>Carry · Campeón Nacional</p>
+                                    <h4>Liderazgo Estratégico</h4>
+                                    <p>Análisis post-partida y desarrollo de planes de juego</p>
                                 </div>
                             </div>
                         </div>
@@ -428,9 +438,10 @@
                     <div class="services-section">
                         <h3>Especialización</h3>
                         <div class="skills-grid-compact">
+                            <!-- CAMBIO: Rol actualizado a Hard Support (Pos 5) -->
                             <div class="skill-item">
-                                <i class="fas fa-sword"></i>
-                                <span>Position 1 Carry</span>
+                                <i class="fas fa-hands-helping"></i>
+                                <span>Hard Support (Pos 5)</span>
                             </div>
                             <div class="skill-item">
                                 <i class="fas fa-crown"></i>
@@ -438,11 +449,11 @@
                             </div>
                             <div class="skill-item">
                                 <i class="fas fa-chess"></i>
-                                <span>Draft Strategy</span>
+                                <span>Draft & Strategy</span>
                             </div>
                             <div class="skill-item">
-                                <i class="fas fa-trophy"></i>
-                                <span>Clutch Plays</span>
+                                <i class="fas fa-headset"></i>
+                                <span>Comunicación</span>
                             </div>
                         </div>
                     </div>
@@ -453,19 +464,13 @@
                             <span class="stat-label">Años Pro</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">Top 10</span>
+                            <span class="stat-number">Top</span>
                             <span class="stat-label">LATAM</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number">50+</span>
                             <span class="stat-label">Torneos</span>
                         </div>
-                    </div>
-                </div>
-                <div class="about-image">
-                    <div class="image-container">
-                        <img src="https://via.placeholder.com/400x500/1a1a2e/ff6b6b?text=Gaming+Setup" alt="Gaming Setup">
-                        <div class="image-overlay"></div>
                     </div>
                 </div>
             </div>
@@ -477,9 +482,10 @@
         <div class="container">
             <h2 class="section-title">Proyectos Destacados</h2>
             <div class="projects-grid">
+                <!-- COMENTARIO: Recuerda actualizar estos proyectos con tus imágenes y enlaces reales -->
                 <div class="project-card">
                     <div class="project-image">
-                        <img src="https://via.placeholder.com/400x250/1a1a2e/00ff88?text=AI+Chat" alt="Proyecto AI Chat">
+                        <img src="https://placehold.co/400x250/1a1a2e/00ff88?text=Manngo+J%26K" alt="Proyecto Manngo J&K">
                         <div class="project-overlay">
                             <div class="project-links">
                                 <a href="#" class="project-link"><i class="fas fa-external-link-alt"></i></a>
@@ -488,19 +494,19 @@
                         </div>
                     </div>
                     <div class="project-content">
-                        <h3>Sistema RAG Inteligente</h3>
-                        <p>Chatbot avanzado con RAG para consultas empresariales, integración con APIs y procesamiento de documentos.</p>
+                        <h3>Modernización de Operaciones</h3>
+                        <p>Lideré la transformación digital de una distribuidora, reemplazando procesos manuales con un sistema web y móvil integrado para ventas, inventario y logística.</p>
                         <div class="project-tech">
+                            <span class="tech-tag">Angular</span>
                             <span class="tech-tag">Python</span>
-                            <span class="tech-tag">RAG</span>
-                            <span class="tech-tag">OpenAI</span>
+                            <span class="tech-tag">Systems Design</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="project-card">
                     <div class="project-image">
-                        <img src="https://via.placeholder.com/400x250/1a1a2e/00ff88?text=Automation" alt="Proyecto Automatización">
+                        <img src="https://placehold.co/400x250/1a1a2e/00ff88?text=RUWAYTECH" alt="Proyecto RUWAYTECH">
                         <div class="project-overlay">
                             <div class="project-links">
                                 <a href="#" class="project-link"><i class="fas fa-external-link-alt"></i></a>
@@ -509,19 +515,19 @@
                         </div>
                     </div>
                     <div class="project-content">
-                        <h3>Plataforma de Automatización</h3>
-                        <p>Sistema completo de automatización empresarial con n8n, integración de múltiples servicios y dashboard analítico.</p>
+                        <h3>Migración de ERP Corporativo</h3>
+                        <p>Contribuí al desarrollo de un sistema de gestión a gran escala para Cementos Pacasmayo, implementando nuevos componentes de interfaz con Angular.</p>
                         <div class="project-tech">
-                            <span class="tech-tag">n8n</span>
-                            <span class="tech-tag">Node.js</span>
-                            <span class="tech-tag">React</span>
+                            <span class="tech-tag">Angular</span>
+                            <span class="tech-tag">Frontend</span>
+                            <span class="tech-tag">ERP</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="project-card">
                     <div class="project-image">
-                        <img src="https://via.placeholder.com/400x250/1a1a2e/00ff88?text=Web+App" alt="Proyecto Web App">
+                        <img src="https://placehold.co/400x250/1a1a2e/00ff88?text=CODIDEEP" alt="Proyecto CODIDEEP">
                         <div class="project-overlay">
                             <div class="project-links">
                                 <a href="#" class="project-link"><i class="fas fa-external-link-alt"></i></a>
@@ -530,20 +536,17 @@
                         </div>
                     </div>
                     <div class="project-content">
-                        <h3>Dashboard Empresarial</h3>
-                        <p>Aplicación web completa con gestión de usuarios, analytics en tiempo real y diseño responsive moderno.</p>
+                        <h3>Plataforma de Gestión de Hosting</h3>
+                        <p>Desarrollé una plataforma web para la administración de clientes y ventas de servicios de hosting.</p>
                         <div class="project-tech">
-                            <span class="tech-tag">React</span>
-                            <span class="tech-tag">Python</span>
-                            <span class="tech-tag">PostgreSQL</span>
+                            <span class="tech-tag">Web Platform</span>
+                            <span class="tech-tag">Sales Management</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </section>
-
-
 
     <!-- Achievements Section - Esports Mode -->
     <section id="esports-achievements" class="achievements section esports-only">
@@ -555,27 +558,63 @@
                         <div class="achievement-badge">
                             <i class="fas fa-crown"></i>
                         </div>
-                        <h3>Top 10 LATAM</h3>
-                        <p>Clasificación entre los mejores equipos de Latinoamérica durante múltiples temporadas</p>
+                        <h3>Liderazgo Competitivo</h3>
+                        <p>Capitán de múltiples equipos profesionales, dirigiendo la estrategia en tiempo real y el análisis post-partida en entornos de alta presión.</p>
                         <div class="achievement-meta">
-                            <span class="achievement-year">2019-2022</span>
-                            <span class="achievement-category">Ranking</span>
+                            <span class="achievement-year">2019-2024</span>
+                            <span class="achievement-category">Liderazgo</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Equipos Profesionales -->
+                    <div class="professional-teams">
+                        <h3>Equipos Profesionales</h3>
+                        <div class="teams-grid">
+                            <div class="team-item">
+                                <div class="team-logo">
+                                    <img src="estarbacks.png" alt="Estarbacks Team" loading="lazy">
+                                </div>
+                                <div class="team-info">
+                                    <h4>Estarbacks</h4>
+                                    <p>Equipo Profesional</p>
+                                </div>
+                            </div>
+                            
+                            <div class="team-item">
+                                <div class="team-logo">
+                                    <img src="noping.png" alt="Noping VPN Team" loading="lazy">
+                                </div>
+                                <div class="team-info">
+                                    <h4>Noping VPN</h4>
+                                    <p>Equipo Profesional</p>
+                                </div>
+                            </div>
+                            
+                            <div class="team-item">
+                                <div class="team-logo">
+                                    <img src="infinity.png" alt="Infinity Team" loading="lazy">
+                                </div>
+                                <div class="team-info">
+                                    <h4>Infinity</h4>
+                                    <p>Equipo Profesional</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
                 <!-- Torneos Destacados -->
                 <div class="tournament-highlights">
-                    <h3>Torneos Destacados</h3>
+                    <h3>Hitos Destacados</h3>
                     <div class="tournaments-grid">
                         <div class="tournament-item">
                             <div class="tournament-icon">
                                 <i class="fas fa-trophy"></i>
                             </div>
                             <div class="tournament-details">
-                                <h4>Liga Nacional Perú</h4>
-                                <p class="tournament-result">🥇 1er Lugar · 2020</p>
-                                <p>Campeón nacional con victoria decisiva</p>
+                                <h4>Circuito Profesional</h4>
+                                <p class="tournament-result">🏆 Competidor de Élite</p>
+                                <p>Participación constante en el circuito profesional sudamericano.</p>
                             </div>
                         </div>
                         
@@ -584,9 +623,9 @@
                                 <i class="fas fa-medal"></i>
                             </div>
                             <div class="tournament-details">
-                                <h4>Copa LATAM Championship</h4>
-                                <p class="tournament-result">🥈 2do Lugar · 2022</p>
-                                <p>Finalista en el torneo más grande del año</p>
+                                <h4>Cultura de Mejora</h4>
+                                <p class="tournament-result">📈 Adaptación Estratégica</p>
+                                <p>Fomenté una cultura de mejora continua y adaptación constante.</p>
                             </div>
                         </div>
                         
@@ -595,9 +634,9 @@
                                 <i class="fas fa-star"></i>
                             </div>
                             <div class="tournament-details">
-                                <h4>Dota Pro Circuit</h4>
-                                <p class="tournament-result">🏆 Top 8 · 2021</p>
-                                <p>Clasificación internacional</p>
+                                <h4>Análisis y Colaboración</h4>
+                                <p class="tournament-result">🤝 Sinergia con Coaches</p>
+                                <p>Colaboración directa con coaches para ejecutar planes de juego complejos.</p>
                             </div>
                         </div>
                     </div>
@@ -614,7 +653,7 @@
             <div class="contact-content">
                 <div class="contact-info">
                     <h3>¡Hablemos de tu próximo proyecto!</h3>
-                    <p>Estoy disponible para discutir cómo puedo ayudarte a llevar tus ideas al siguiente nivel.</p>
+                    <p>Estoy disponible para discutir cómo mi combinación única de habilidades técnicas y estratégicas puede aportar valor.</p>
                     <div class="contact-items">
                         <div class="contact-item">
                             <i class="fas fa-envelope"></i>
@@ -630,12 +669,15 @@
                         </div>
                     </div>
                     <div class="social-links">
-                        <a href="#" class="social-link">
+                        <!-- CAMBIO: Enlace a LinkedIn actualizado -->
+                        <a href="https://www.linkedin.com/in/eaop-yor" class="social-link" target="_blank" rel="noopener noreferrer">
                             <i class="fab fa-linkedin"></i>
                         </a>
+                        <!-- COMENTARIO: Recuerda añadir tu enlace de GitHub aquí -->
                         <a href="#" class="social-link">
                             <i class="fab fa-github"></i>
                         </a>
+                        <!-- COMENTARIO: Recuerda añadir tu enlace de Twitter/X aquí si lo usas -->
                         <a href="#" class="social-link">
                             <i class="fab fa-twitter"></i>
                         </a>
@@ -674,10 +716,11 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-left">
-                    <p>&copy; 2024 Eddy Portafolio. Todos los derechos reservados.</p>
+                    <p>&copy; 2024 Eddy Orosco Prada. Todos los derechos reservados.</p>
                 </div>
                 <div class="footer-right">
-                    <a href="#" class="footer-link" id="footer-cv">Descargar CV</a>
+                    <!-- CAMBIO: Enlace al CV actualizado -->
+                    <a href="EDDY Arnold OROSCO PRADA En.pdf" class="footer-link" id="footer-cv" download>Descargar CV</a>
                 </div>
             </div>
         </div>
