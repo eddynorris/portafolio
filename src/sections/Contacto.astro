@@ -1,0 +1,184 @@
+---
+import { enlaces, perfil } from '../data/portfolio';
+---
+
+<section id="contacto" class="sec">
+  <div class="wrap sec__grid">
+    <div class="sec__left reveal">
+      <p class="eyebrow eyebrow--light">Hablemos</p>
+      <h2 class="section-title">¿Tienes una<br />idea rica?</h2>
+      <p class="sec__sub">
+        Cuéntame qué quieres construir. Respondo en menos de 24&nbsp;horas, casi siempre con
+        un boceto adjunto.
+      </p>
+
+      <a class="mail" href={`mailto:${perfil.email}`}>{perfil.email}</a>
+
+      <ul class="links">
+        {
+          enlaces.map((e) => (
+            <li>
+              <a href={e.href} target="_blank" rel="noreferrer">
+                {e.label} <span aria-hidden="true">↗</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <form class="form reveal" id="contact-form" novalidate>
+      <div class="field">
+        <label for="nombre">Nombre</label>
+        <input id="nombre" name="nombre" type="text" placeholder="Cómo te llamas" required />
+      </div>
+      <div class="field">
+        <label for="correo">Correo</label>
+        <input id="correo" name="correo" type="email" placeholder="tu@correo.com" required />
+      </div>
+      <div class="field">
+        <label for="mensaje">Mensaje</label>
+        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Cuéntame el proyecto…" required></textarea>
+      </div>
+      <button class="btn btn--ink" type="submit">Enviar mensaje <span aria-hidden="true">→</span></button>
+      <p class="form__note" id="form-note" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const note = document.getElementById('form-note');
+  form?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    const data = new FormData(form);
+    const nombre = String(data.get('nombre') || '').trim();
+    const correo = String(data.get('correo') || '').trim();
+    const mensaje = String(data.get('mensaje') || '').trim();
+
+    if (!nombre || !correo || !mensaje) {
+      if (note) note.textContent = 'Completa todos los campos antes de enviar.';
+      return;
+    }
+    if (note) note.textContent = 'Abriendo tu cliente de correo…';
+    const subject = encodeURIComponent(`Hola desde tu portafolio — ${nombre}`);
+    const body = encodeURIComponent(`${mensaje}\n\n— ${nombre}\n${correo}`);
+    window.location.href = `mailto:hola@tudominio.com?subject=${subject}&body=${body}`;
+  });
+</script>
+
+<style>
+  .sec {
+    padding-block: clamp(4.5rem, 9vw, 8rem);
+    background: var(--ink);
+    color: var(--cream);
+    border-bottom: 3px solid var(--ink);
+  }
+  .sec__grid {
+    display: grid;
+    gap: clamp(2.2rem, 5vw, 4rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+    align-items: start;
+  }
+
+  .eyebrow--light { color: var(--amarillo); }
+  .eyebrow--light::before { background: var(--amarillo); }
+
+  .section-title { margin-top: 1rem; }
+
+  .sec__sub {
+    margin-top: 1.2rem;
+    color: color-mix(in srgb, var(--cream) 72%, transparent);
+    font-size: clamp(1rem, 0.95rem + 0.3vw, 1.13rem);
+    max-width: 32rem;
+  }
+
+  .mail {
+    display: inline-block;
+    margin-top: 1.8rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1.15rem, 1rem + 1.4vw, 1.9rem);
+    letter-spacing: -0.02em;
+    border-bottom: 3px solid var(--aji);
+    padding-bottom: 0.15rem;
+    transition: color 0.25s ease, transform 0.25s ease;
+  }
+  .mail:hover {
+    color: var(--amarillo);
+    transform: translateX(6px);
+  }
+
+  .links {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+  }
+  .links a {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 2px solid color-mix(in srgb, var(--cream) 45%, transparent);
+    border-radius: 999px;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.88rem;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .links a:hover {
+    background: var(--amarillo);
+    color: var(--ink);
+    border-color: var(--ink);
+    transform: translateY(-4px);
+  }
+
+  .form {
+    background: var(--paper);
+    color: var(--ink);
+    border: var(--stroke);
+    border-radius: 22px;
+    box-shadow: 8px 8px 0 var(--aji);
+    padding: clamp(1.4rem, 3vw, 2.2rem);
+    display: grid;
+    gap: 1.05rem;
+  }
+  .field {
+    display: grid;
+    gap: 0.4rem;
+  }
+  .field label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    padding: 0.8rem 0.95rem;
+    border: var(--stroke);
+    border-radius: 12px;
+    background: var(--cream);
+    font-size: 1rem;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    resize: vertical;
+  }
+  .field input:focus,
+  .field textarea:focus {
+    outline: none;
+    box-shadow: 4px 4px 0 var(--teal);
+    transform: translate(-2px, -2px);
+  }
+  .form .btn { justify-content: center; }
+  .form__note {
+    font-size: 0.86rem;
+    color: var(--ink-soft);
+    min-height: 1.2em;
+  }
+</style>

@@ -1,0 +1,372 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HeroScene from '../components/HeroScene.tsx';
+import Proyectos from '../sections/Proyectos.astro';
+import Skills from '../sections/Skills.astro';
+import Contacto from '../sections/Contacto.astro';
+import { perfil } from '../data/portfolio';
+---
+
+<Layout>
+  <header class="nav">
+    <a class="nav__brand" href="#top">
+      <span class="nav__dot"></span>
+      {perfil.nombre}
+    </a>
+    <nav class="nav__links" aria-label="Principal">
+      <a href="#proyectos">Proyectos</a>
+      <a href="#skills">Skills</a>
+      <a href="#contacto">Contacto</a>
+    </nav>
+    <a class="btn btn--small" href="#contacto">Hablemos</a>
+  </header>
+
+  <main id="top">
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="hero__scene" aria-hidden="true">
+        <HeroScene client:only="react" />
+        <div class="hero__scrim"></div>
+      </div>
+
+      <div class="hero__copy wrap">
+        <p class="eyebrow">{perfil.disponibilidad}</p>
+        <h1 class="hero__title">
+          <span>Diseño y programo</span>
+          <span>experiencias <em>3D</em></span>
+          <span>que se sienten vivas.</span>
+        </h1>
+        <p class="hero__lead">
+          Soy {perfil.nombre}, <strong>{perfil.rol}</strong> en {perfil.ciudad}.
+          Cel-shading, motion design y código que corre a 60&nbsp;fps.
+        </p>
+        <div class="hero__cta">
+          <a class="btn" href="#proyectos">Ver proyectos <span aria-hidden="true">↓</span></a>
+          <a class="btn btn--ghost" href="#contacto">Escríbeme</a>
+        </div>
+      </div>
+
+      <div class="hero__hint" aria-hidden="true">
+        <span>scroll</span>
+        <i></i>
+      </div>
+      <div class="hero__badge" aria-hidden="true">
+        <span class="hero__badgeText">hecho con three.js · r186</span>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        {
+          Array.from({ length: 2 }).map(() => (
+            <span class="marquee__row">
+              {[
+                'CEL-SHADING',
+                'REACT THREE FIBER',
+                'MOTION DESIGN',
+                'WEBGL',
+                'SQUASH & STRETCH',
+                'ASTRO',
+                'GLSL',
+                'DISEÑO 3D',
+              ].map((w) => (
+                <b>
+                  {w} <i>✦</i>
+                </b>
+              ))}
+            </span>
+          ))
+        }
+      </div>
+    </div>
+
+    <Proyectos />
+    <Skills />
+    <Contacto />
+  </main>
+
+  <footer class="foot">
+    <div class="wrap foot__inner">
+      <p>© {new Date().getFullYear()} {perfil.nombre}. Ceviche recién hecho.</p>
+      <p class="foot__meta">Astro + React Three Fiber · sin frameworks pesados</p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  /* ---------------- nav ---------------- */
+  .nav {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 2rem);
+    padding: 0.9rem var(--gutter);
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--cream) 72%, transparent);
+    border-bottom: 2px solid var(--ink);
+  }
+  .nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-size: 1.05rem;
+  }
+  .nav__dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--aji);
+    border: 2px solid var(--ink);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.35); }
+  }
+  .nav__links {
+    display: flex;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
+    margin-left: auto;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .nav__links a {
+    position: relative;
+    padding-bottom: 2px;
+  }
+  .nav__links a::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    width: 100%;
+    height: 2px;
+    background: var(--aji);
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .nav__links a:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+  .btn--small {
+    padding: 0.5rem 1.05rem;
+    font-size: 0.88rem;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  @media (max-width: 720px) {
+    .nav__links { display: none; }
+  }
+
+  /* ---------------- hero ---------------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    border-bottom: 3px solid var(--ink);
+  }
+  .hero__scene {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+  }
+  .hero__scrim {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      100deg,
+      color-mix(in srgb, var(--cream) 82%, transparent) 0%,
+      color-mix(in srgb, var(--cream) 44%, transparent) 32%,
+      transparent 56%
+    );
+  }
+  .hero__copy {
+    position: relative;
+    z-index: 2;
+    padding-block: 7rem 5rem;
+    width: min(100% - var(--gutter) * 2, 46rem);
+    margin-inline: var(--gutter) auto;
+  }
+  .hero__title {
+    margin-top: 1.1rem;
+    font-size: clamp(2.5rem, 0.9rem + 6.4vw, 5.2rem);
+    display: flex;
+    flex-direction: column;
+    gap: 0.06em;
+  }
+  .hero__title span {
+    display: block;
+    opacity: 0;
+    transform: translateY(0.5em) rotate(-1.4deg);
+    animation: lineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .hero__title span:nth-child(1) { animation-delay: 0.15s; }
+  .hero__title span:nth-child(2) { animation-delay: 0.27s; }
+  .hero__title span:nth-child(3) { animation-delay: 0.39s; }
+  @keyframes lineIn {
+    to { opacity: 1; transform: none; }
+  }
+  .hero__title em {
+    font-style: normal;
+    position: relative;
+    color: var(--ink);
+    background: linear-gradient(transparent 58%, var(--amarillo) 58%, var(--amarillo) 94%, transparent 94%);
+    padding-inline: 0.1em;
+  }
+  .hero__lead {
+    margin-top: 1.5rem;
+    max-width: 34rem;
+    font-size: clamp(1rem, 0.95rem + 0.35vw, 1.18rem);
+    color: var(--ink-soft);
+    opacity: 0;
+    animation: lineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards;
+  }
+  .hero__lead strong { color: var(--ink); }
+  .hero__cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.9rem;
+    margin-top: 2rem;
+    opacity: 0;
+    animation: lineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+  }
+  .hero__hint {
+    position: absolute;
+    z-index: 2;
+    left: var(--gutter);
+    bottom: 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .hero__hint i {
+    width: 3.4rem;
+    height: 2px;
+    background: var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero__hint i::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--aji);
+    animation: sweep 1.9s ease-in-out infinite;
+  }
+  @keyframes sweep {
+    0% { transform: translateX(-100%); }
+    60%, 100% { transform: translateX(100%); }
+  }
+  .hero__badge {
+    position: absolute;
+    z-index: 2;
+    right: var(--gutter);
+    bottom: 1.4rem;
+  }
+  .hero__badgeText {
+    display: inline-block;
+    font-size: 0.72rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    padding: 0.42rem 0.85rem;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: 3px 3px 0 var(--ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+  }
+
+  @media (max-width: 900px) {
+    .hero {
+      display: block;
+      min-height: 0;
+    }
+    .hero__scene {
+      position: relative;
+      height: clamp(340px, 56svh, 520px);
+    }
+    .hero__scrim {
+      background: linear-gradient(
+        180deg,
+        transparent 62%,
+        color-mix(in srgb, var(--cream) 55%, transparent) 84%,
+        var(--cream) 100%
+      );
+    }
+    .hero__copy {
+      margin-inline: var(--gutter);
+      width: auto;
+      padding-block: 1.4rem 3.5rem;
+    }
+    .hero__hint { display: none; }
+    .hero__badge { display: none; }
+  }
+
+  /* ---------------- marquee ---------------- */
+  .marquee {
+    overflow: hidden;
+    background: var(--ink);
+    color: var(--cream);
+    border-bottom: 3px solid var(--ink);
+    padding-block: 0.85rem;
+  }
+  .marquee__track {
+    display: flex;
+    width: max-content;
+    animation: slide 34s linear infinite;
+  }
+  .marquee__row {
+    display: flex;
+    gap: 2.2rem;
+    padding-right: 2.2rem;
+    white-space: nowrap;
+  }
+  .marquee b {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(1rem, 0.85rem + 1vw, 1.5rem);
+    letter-spacing: 0.06em;
+  }
+  .marquee i {
+    font-style: normal;
+    color: var(--amarillo);
+    margin-left: 2.2rem;
+  }
+  @keyframes slide {
+    to { transform: translateX(-50%); }
+  }
+
+  /* ---------------- footer ---------------- */
+  .foot {
+    background: var(--ink);
+    color: var(--cream);
+    padding-block: 2.2rem;
+    border-top: 3px solid var(--ink);
+  }
+  .foot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 1.5rem;
+    justify-content: space-between;
+    font-size: 0.9rem;
+  }
+  .foot__meta { color: color-mix(in srgb, var(--cream) 55%, transparent); }
+</style>
