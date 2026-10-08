@@ -1,5 +1,5 @@
 ---
-import { enlaces, perfil } from '../data/portfolio';
+import { enlaces, whatsapp } from '../data/portfolio';
 ---
 
 <section id="contacto" class="sec">
@@ -12,7 +12,9 @@ import { enlaces, perfil } from '../data/portfolio';
         un boceto adjunto.
       </p>
 
-      <a class="mail" href={`mailto:${perfil.email}`}>{perfil.email}</a>
+      <a class="mail" href={`${whatsapp.href}?text=${encodeURIComponent('Hola Eddy, te escribo desde tu portafolio.')}`} target="_blank" rel="noreferrer">
+        {whatsapp.visible}
+      </a>
 
       <ul class="links">
         {
@@ -33,37 +35,35 @@ import { enlaces, perfil } from '../data/portfolio';
         <input id="nombre" name="nombre" type="text" placeholder="Cómo te llamas" required />
       </div>
       <div class="field">
-        <label for="correo">Correo</label>
-        <input id="correo" name="correo" type="email" placeholder="tu@correo.com" required />
-      </div>
-      <div class="field">
         <label for="mensaje">Mensaje</label>
-        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Cuéntame el proyecto…" required></textarea>
+        <textarea id="mensaje" name="mensaje" rows="6" placeholder="Cuéntame el proyecto…" required></textarea>
       </div>
-      <button class="btn btn--ink" type="submit">Enviar mensaje <span aria-hidden="true">→</span></button>
+      <button class="btn btn--ink" type="submit">
+        Enviar por WhatsApp <span aria-hidden="true">→</span>
+      </button>
       <p class="form__note" id="form-note" role="status" aria-live="polite"></p>
     </form>
   </div>
 </section>
 
 <script>
+  import { whatsapp } from '../data/portfolio';
+
   const form = document.getElementById('contact-form') as HTMLFormElement | null;
   const note = document.getElementById('form-note');
   form?.addEventListener('submit', (ev) => {
     ev.preventDefault();
     const data = new FormData(form);
     const nombre = String(data.get('nombre') || '').trim();
-    const correo = String(data.get('correo') || '').trim();
     const mensaje = String(data.get('mensaje') || '').trim();
 
-    if (!nombre || !correo || !mensaje) {
-      if (note) note.textContent = 'Completa todos los campos antes de enviar.';
+    if (!nombre || !mensaje) {
+      if (note) note.textContent = 'Completa tu nombre y el mensaje antes de enviar.';
       return;
     }
-    if (note) note.textContent = 'Abriendo tu cliente de correo…';
-    const subject = encodeURIComponent(`Hola desde tu portafolio — ${nombre}`);
-    const body = encodeURIComponent(`${mensaje}\n\n— ${nombre}\n${correo}`);
-    window.location.href = `mailto:hola@tudominio.com?subject=${subject}&body=${body}`;
+    if (note) note.textContent = 'Abriendo WhatsApp…';
+    const texto = encodeURIComponent(`Hola Eddy, soy ${nombre}.\n\n${mensaje}`);
+    window.location.href = `https://wa.me/${whatsapp.numero}?text=${texto}`;
   });
 </script>
 

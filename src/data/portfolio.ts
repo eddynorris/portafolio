@@ -2,19 +2,22 @@
    Cambia estos valores por los tuyos. */
 
 export const perfil = {
-  nombre: 'Tu Nombre',
-  rol: 'Creative Developer',
-  tagline: 'Diseño y programo experiencias 3D que se sienten vivas.',
+  nombre: 'Eddy Arnold Orosco Prada',
+  rol: 'Desarrollo de producto & agentes de IA',
+  tagline:
+    'Backend con Python, agentes de IA y video generativo; presentado con experiencias 3D que se sienten vivas.',
   ciudad: 'Lima, Perú',
-  email: 'hola@tudominio.com',
   disponibilidad: 'Disponible para freelance',
 };
 
+export const whatsapp = {
+  numero: '51927577215',
+  visible: '+51 927 577 215',
+  href: 'https://wa.me/51927577215',
+};
+
 export const enlaces = [
-  { label: 'GitHub', href: 'https://github.com/' },
-  { label: 'LinkedIn', href: 'https://linkedin.com/' },
-  { label: 'Instagram', href: 'https://instagram.com/' },
-  { label: 'Are.na', href: 'https://are.na/' },
+  { label: 'GitHub', href: 'https://github.com/eddynorris' },
 ];
 
 export type Proyecto = {
@@ -85,19 +88,22 @@ export const proyectos: Proyecto[] = [
 
 export const skills = [
   {
-    grupo: 'Frontend',
-    items: ['TypeScript', 'React', 'Astro', 'Next.js', 'Tailwind', 'HTML/CSS'],
+    grupo: 'Desarrollo y backend',
+    items: ['Python', 'Flask', 'REST APIs', 'Supabase/PostgreSQL', 'Railway', 'HTML/JS'],
   },
   {
-    grupo: '3D & Motion',
-    items: ['Three.js', 'React Three Fiber', 'GLSL', 'GSAP', 'Blender', 'After Effects'],
+    grupo: 'Agentes de IA y desarrollo asistido',
+    items: [
+      'Claude Code',
+      'Codex',
+      'OpenCode',
+      'Hermes Agent (Linux)',
+      'Gemini API',
+      'Bots de Telegram con IA',
+    ],
   },
   {
-    grupo: 'Backend',
-    items: ['Node.js', 'PostgreSQL', 'Supabase', 'REST', 'tRPC'],
-  },
-  {
-    grupo: 'Tooling',
-    items: ['Vite', 'Figma', 'Git', 'Storybook', 'Playwright', 'CI/CD'],
+    grupo: 'Video y contenido generativo',
+    items: ['Seedance', 'Google Flow', 'ComfyUI', 'OBS'],
   },
 ];
