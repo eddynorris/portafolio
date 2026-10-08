@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { clamp01, easeOutQuint, prefersReduced } from './anim';
+import { clamp, clamp01, easeOutQuint, prefersReduced } from './anim';
 import { pointerNorm, scrollY } from './pointer';
+import { getFocus } from './store';
 
 const START = new THREE.Vector3(5.2, 8.6, 13.5);
 const START_AT = new THREE.Vector3(0.4, 1.6, 0);
@@ -21,6 +22,7 @@ const HERO_MOBILE = {
 
 const tmpPos = new THREE.Vector3();
 const tmpAt = new THREE.Vector3();
+const tmpAnchor = new THREE.Vector3();
 
 export function CameraRig() {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera;
@@ -58,7 +60,20 @@ export function CameraRig() {
     tmpPos.y += Math.min(s * 0.0006, 1);
     tmpAt.y -= Math.min(s * 0.0005, 0.6);
 
-    const k = 1 - Math.pow(0.0015, Math.min(dt, 0.05));
+    /* zoom-in hacia la parte clicada del carrito */
+    const f = getFocus();
+    if (f) {
+      tmpAnchor.copy(f.offset);
+      f.anchor.localToWorld(tmpAnchor);
+      const vTan = Math.tan((camera.fov * Math.PI) / 360);
+      const hTan = vTan * Math.max(camera.aspect, 0.4);
+      const d = clamp((f.fit / 2) / (hTan * 0.62), 1.6, 9);
+      tmpPos.copy(tmpAnchor).addScaledVector(f.dir, d);
+      tmpPos.y = Math.max(tmpPos.y, tmpAnchor.y - 1.5, 0.75);
+      tmpAt.copy(tmpAnchor);
+    }
+
+    const k = 1 - Math.pow(f ? 0.05 : 0.0015, Math.min(dt, 0.05));
     camera.position.lerp(tmpPos, k);
     at.current.lerp(tmpAt, k);
     camera.lookAt(at.current);

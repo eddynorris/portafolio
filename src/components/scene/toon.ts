@@ -170,6 +170,60 @@ export function starTexture() {
   });
 }
 
+/** Chapa flotante que marca un punto interactivo del carrito. */
+export function badgeTexture(label: string, fill = '#ffc93c') {
+  return memo(`badge:${label}:${fill}`, () => {
+    const W = 512;
+    const H = 200;
+    const c = makeCanvas(W, H);
+    const g = c.getContext('2d')!;
+
+    g.font = '900 92px "Bricolage Grotesque", Impact, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    const w = Math.min(W - 48, g.measureText(label).width + 92);
+    const x = (W - w) / 2;
+    const y = 34;
+    const h = 132;
+    const r = 66;
+
+    /* colita apuntando al objeto (dibujada antes para que la píldora tape su costura) */
+    g.beginPath();
+    g.moveTo(W / 2 - 36, y + h - 30);
+    g.lineTo(W / 2 + 36, y + h - 30);
+    g.lineTo(W / 2, H - 6);
+    g.closePath();
+    g.fillStyle = fill;
+    g.fill();
+    g.lineWidth = 16;
+    g.lineJoin = 'round';
+    g.strokeStyle = INK;
+    g.stroke();
+
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.lineTo(x + w - r, y);
+    g.arcTo(x + w, y, x + w, y + r, r);
+    g.lineTo(x + w, y + h - r);
+    g.arcTo(x + w, y + h, x + w - r, y + h, r);
+    g.lineTo(x + r, y + h);
+    g.arcTo(x, y + h, x, y + h - r, r);
+    g.lineTo(x, y + r);
+    g.arcTo(x, y, x + r, y, r);
+    g.closePath();
+    g.fillStyle = fill;
+    g.fill();
+    g.lineWidth = 16;
+    g.strokeStyle = INK;
+    g.stroke();
+
+    g.fillStyle = INK;
+    g.fillText(label, W / 2, y + h / 2 + 5);
+
+    return canvasTexture(c);
+  });
+}
+
 /** Pez dibujado para colgar de la toldo. */
 export function fishTexture() {
   return memo('fish', () => {

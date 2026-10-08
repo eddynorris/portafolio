@@ -1,11 +1,12 @@
-import { useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useMemo, useRef, useState } from 'react';
+import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Outlines, RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   INK,
   RAMP_MAIN,
   RAMP_SOFT,
+  badgeTexture,
   fishTexture,
   menuTexture,
   shadowTexture,
@@ -15,6 +16,14 @@ import {
   toonRamp,
 } from './toon';
 import { clamp01, easeOutBounce, easeOutQuint, lerp, prefersReduced, wave } from './anim';
+import { setFocus, type HotspotId } from './store';
+
+/** Partes clicables del carrito: ancho a encuadrar y offset del centro. */
+const HOTSPOT = {
+  proyectos: { fit: 2.1, offset: [0, 0.05, 0] },
+  skills: { fit: 1.2, offset: [0, 0, 0] },
+  redes: { fit: 3.6, offset: [1.5, 1.6, 0] },
+} as const satisfies Record<HotspotId, { fit: number; offset: readonly [number, number, number] }>;
 
 /* ------------------------------------------------------------------ */
 /*  Primitivas                                                        */
@@ -232,6 +241,30 @@ function SpeedLines({ offset, reduced }: { offset: number; reduced: boolean }) {
 /*  El carrito cevichero                                               */
 /* ------------------------------------------------------------------ */
 
+/** Chapa flotante que marca una parte clicable del carrito. */
+function Badge({
+  label,
+  fill,
+  position,
+}: {
+  label: string;
+  fill: string;
+  position: [number, number, number];
+}) {
+  const ref = useRef<THREE.Sprite>(null!);
+  const tex = useMemo(() => badgeTexture(label, fill), [label, fill]);
+  useFrame((state) => {
+    if (!ref.current) return;
+    const t = state.clock.getElapsedTime();
+    ref.current.position.y = position[1] + Math.sin(t * 1.7 + position[0] * 2) * 0.055;
+  });
+  return (
+    <sprite ref={ref} position={position} scale={[1.1, 0.43, 1]}>
+      <spriteMaterial map={tex} transparent depthWrite={false} toneMapped={false} />
+    </sprite>
+  );
+}
+
 export function CevicheCart({ offset = 0 }: { offset?: number }) {
   const root = useRef<THREE.Group>(null!);
   const squash = useRef<THREE.Group>(null!);
@@ -241,8 +274,36 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
   const shadow = useRef<THREE.Mesh>(null!);
   const hop = useRef<THREE.Group>(null!);
   const sign = useRef<THREE.Group>(null!);
+  const menu = useRef<THREE.Group>(null!);
+  const sombrilla = useRef<THREE.Group>(null!);
+
+  const [hover, setHover] = useState<HotspotId | null>(null);
+  const camera = useThree((s) => s.camera);
 
   const reduced = prefersReduced();
+
+  /** handlers de puntero para cada parte clicable del carrito */
+  const spot = (id: HotspotId) => ({
+    onPointerEnter: (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      setHover(id);
+      document.body.style.cursor = 'pointer';
+    },
+    onPointerLeave: () => {
+      setHover((h) => (h === id ? null : h));
+      document.body.style.cursor = '';
+    },
+    onClick: (e: ThreeEvent<MouseEvent>) => {
+      e.stopPropagation();
+      const cfg = HOTSPOT[id];
+      const anchor = e.eventObject as THREE.Object3D;
+      const offset = new THREE.Vector3(...cfg.offset);
+      const world = offset.clone();
+      anchor.localToWorld(world);
+      const dir = camera.position.clone().sub(world).normalize();
+      setFocus({ id, anchor, offset, dir, fit: cfg.fit });
+    },
+  });
 
   const canopyGeo = useMemo(() => {
     const pts: THREE.Vector2[] = [];
@@ -270,7 +331,7 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
   const fishTex = useMemo(() => fishTexture(), []);
   const shadowTex = useMemo(() => shadowTexture(), []);
 
-  useFrame((state) => {
+  useFrame((state, dt) => {
     const t = state.clock.getElapsedTime();
     const enter = reduced ? 1 : clamp01((t - offset) / 1.5);
     const settled = enter >= 1 ? 1 : 0;
@@ -322,6 +383,16 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
       const k = 1 - clamp01(root.current.position.y / 3) * 0.6;
       shadow.current.scale.setScalar(Math.max(0.2, k) * (1 + Math.sin(t * 1.55) * 0.03));
     }
+
+    /* realce de la parte bajo el puntero */
+    const kh = 1 - Math.pow(0.0006, Math.min(dt, 0.05));
+    const hl = (o: THREE.Object3D | null, on: boolean) => {
+      if (!o) return;
+      o.scale.setScalar(THREE.MathUtils.lerp(o.scale.x, on ? 1.07 : 1, kh));
+    };
+    hl(sign.current, hover === 'proyectos');
+    hl(menu.current, hover === 'skills');
+    hl(sombrilla.current, hover === 'redes');
   });
 
   return (
@@ -433,7 +504,7 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
               <Toon color="#2b2540" />
             </mesh>
           ))}
-          <group ref={sign} position={[0, 2.07, -0.44]}>
+          <group ref={sign} position={[0, 2.07, -0.44]} {...spot('proyectos')}>
             <RoundedBox args={[1.72, 0.86, 0.07]} radius={0.04} smoothness={4}>
               <Toon color="#ff5a3c" />
               <Ink t={0.02} />
@@ -442,6 +513,7 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
               <planeGeometry args={[1.64, 0.8]} />
               <meshBasicMaterial map={signTex} toneMapped={false} />
             </mesh>
+            <Badge label="PROYECTOS" fill="#ffc93c" position={[0, 0.8, 0]} />
           </group>
 
           {/* mesón */}
@@ -513,7 +585,7 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
             </mesh>
           </group>
 
-          <group position={[-1.45, 0.36, 0.52]} rotation={[0, 0.42, 0.06]}>
+          <group ref={menu} position={[-1.45, 0.36, 0.52]} rotation={[0, 0.42, 0.06]} {...spot('skills')}>
             <RoundedBox args={[0.56, 0.7, 0.05]} radius={0.02}>
               <Toon color="#2b2540" />
               <Ink t={0.02} />
@@ -522,10 +594,17 @@ export function CevicheCart({ offset = 0 }: { offset?: number }) {
               <planeGeometry args={[0.5, 0.64]} />
               <meshBasicMaterial map={menuTex} toneMapped={false} />
             </mesh>
+            <Badge label="SKILLS" fill="#14a8a8" position={[0, 0.62, 0]} />
           </group>
 
           {/* sombrilla */}
-          <group position={[-0.95, 1.15, -0.35]} rotation={[0, 0, 0.17]}>
+          <group
+            ref={sombrilla}
+            position={[-0.95, 1.15, -0.35]}
+            rotation={[0, 0, 0.17]}
+            {...spot('redes')}
+          >
+            <Badge label="REDES" fill="#ff5a3c" position={[2.7, 1.1, 0.3]} />
             <group ref={umbrella}>
               <mesh position={[0, 1.15, 0]}>
                 <cylinderGeometry args={[0.035, 0.035, 2.3, 10]} />

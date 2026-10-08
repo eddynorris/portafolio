@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
+import type * as THREE from 'three';
 import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing';
 import { CevicheCart } from './CevicheCart';
 import { CameraRig } from './CameraRig';
@@ -7,6 +8,7 @@ import { Clouds, Ground, Sea } from './Ground';
 import { Sky } from './Sky';
 import { attachPointer, scrollY } from './pointer';
 import { prefersReduced } from './anim';
+import { getFocus } from './store';
 
 /** Da vueltas al carrito conforme haces scroll. */
 function SpinOnScroll() {
@@ -16,7 +18,10 @@ function SpinOnScroll() {
 
   useEffect(() => {
     attachPointer();
-    const on = () => (target.current = reduced ? 0 : -scrollY() * 0.0022);
+    const on = () => {
+      if (getFocus()) return;
+      target.current = reduced ? 0 : -scrollY() * 0.0022;
+    };
     on();
     window.addEventListener('scroll', on, { passive: true });
     return () => window.removeEventListener('scroll', on);

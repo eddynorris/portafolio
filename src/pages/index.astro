@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import HeroScene from '../components/HeroScene.tsx';
+import CartPanel from '../components/CartPanel';
 import Proyectos from '../sections/Proyectos.astro';
 import Skills from '../sections/Skills.astro';
 import Contacto from '../sections/Contacto.astro';
@@ -45,6 +46,10 @@ import { perfil } from '../data/portfolio';
           <a class="btn" href="#proyectos">Ver proyectos <span aria-hidden="true">↓</span></a>
           <a class="btn btn--ghost" href="#contacto">Escríbeme</a>
         </div>
+        <p class="hero__touch">
+          <span class="hero__touchDot" aria-hidden="true"></span>
+          Toca el letrero, el menú o la sombrilla del carrito
+        </p>
       </div>
 
       <div class="hero__hint" aria-hidden="true">
@@ -88,6 +93,8 @@ import { perfil } from '../data/portfolio';
     <Skills />
     <Contacto />
   </main>
+
+  <CartPanel client:only="react" />
 
   <footer class="foot">
     <div class="wrap foot__inner">
@@ -201,6 +208,11 @@ import { perfil } from '../data/portfolio';
     padding-block: 7rem 5rem;
     width: min(100% - var(--gutter) * 2, 46rem);
     margin-inline: var(--gutter) auto;
+    pointer-events: none;
+  }
+  .hero__copy a,
+  .hero__copy button {
+    pointer-events: auto;
   }
   .hero__title {
     margin-top: 1.1rem;
@@ -230,7 +242,7 @@ import { perfil } from '../data/portfolio';
   }
   .hero__lead {
     margin-top: 1.5rem;
-    max-width: 34rem;
+    max-width: 30rem;
     font-size: clamp(1rem, 0.95rem + 0.35vw, 1.18rem);
     color: var(--ink-soft);
     opacity: 0;
@@ -244,6 +256,29 @@ import { perfil } from '../data/portfolio';
     margin-top: 2rem;
     opacity: 0;
     animation: lineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards;
+  }
+  .hero__touch {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin-top: 1.4rem;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    opacity: 0;
+    animation: lineIn 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.95s forwards;
+  }
+  .hero__touchDot {
+    width: 0.62rem;
+    height: 0.62rem;
+    flex: none;
+    border-radius: 50%;
+    background: var(--aji);
+    border: 2px solid var(--ink);
+    animation: pulse 1.9s ease-in-out infinite;
   }
   .hero__hint {
     position: absolute;
