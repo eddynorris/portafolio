@@ -1,0 +1,236 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { perfil } from '../../data/portfolio';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const temas = [
+  {
+    slug: `${base}/educador/ddd-puertos-y-adaptadores`,
+    etiqueta: 'Parque DDD · interactivo',
+    titulo: 'DDD, Puertos y Adaptadores',
+    resumen:
+      'Domain-Driven Design y arquitectura hexagonal paseados por un parque de atracciones: cada invitado es una solicitud, cada orbe un evento de dominio y cada valla una frontera de contexto. Con pausa, velocidad y fichas en español.',
+    color: 'var(--teal)',
+  },
+  {
+    slug: null,
+    etiqueta: 'Muy pronto',
+    titulo: 'Táctica de DDD: agregados y eventos',
+    resumen:
+      'Raíces de agregado, invariantes y el ciclo de un evento de dominio, con el mismo formato de escena y manual.',
+    color: 'var(--amarillo)',
+  },
+];
+---
+
+<Layout
+  title={`Educador — ${perfil.nombre}`}
+  description="Apartado educativo: explicaciones interactivas de DDD, puertos y adaptadores y otros conceptos de arquitectura de software, en español."
+>
+  <header class="nav">
+    <a class="nav__brand" href={`${base}/`}>
+      <span class="nav__dot"></span>
+      {perfil.nombre}
+    </a>
+    <nav class="nav__links" aria-label="Principal">
+      <a href={`${base}/`}>Portada</a>
+      <span class="nav__crumb" aria-current="page">Educador</span>
+    </nav>
+    <a class="btn btn--small" href={`${base}/#contacto`}>Hablemos</a>
+  </header>
+
+  <main>
+    <section class="eduHero">
+      <div class="wrap">
+        <p class="eyebrow reveal">Portada / Educador</p>
+        <h1 class="eduTitle reveal">Educador</h1>
+        <p class="eduLead reveal">
+          Explicaciones que se recorren, no que se leen: escenas interactivas con reglas del
+          dominio en vivo, manual en español y fuentes citadas. Cada tema es un apartado; cada
+          apartado, una pieza que puedes pausar, reiniciar y diseccionar.
+        </p>
+
+        <div class="eduGrid">
+          {
+            temas.map((t) => (
+              <article class="eduCard reveal" data-off={t.slug ? 'false' : 'true'}>
+                <span class="eduTag" style={{ '--c': t.color }}>
+                  {t.etiqueta}
+                </span>
+                <h2>{t.titulo}</h2>
+                <p>{t.resumen}</p>
+                {t.slug ? (
+                  <a class="btn eduBtn" href={t.slug}>
+                    Abrir el parque <span aria-hidden="true">→</span>
+                  </a>
+                ) : (
+                  <span class="eduSoon">En preparación</span>
+                )}
+              </article>
+            ))
+          }
+        </div>
+
+        <p class="eduBack reveal">
+          <a class="btn btn--ghost" href={`${base}/`}>← Volver a la portada</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="eduFoot">
+    <div class="wrap">
+      <p>{perfil.nombre} · {perfil.ciudad}</p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  .nav {
+    position: sticky;
+    z-index: 40;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 2rem);
+    padding: 0.9rem var(--gutter);
+    backdrop-filter: blur(10px);
+    background: color-mix(in srgb, var(--cream) 72%, transparent);
+    border-bottom: 2px solid var(--ink);
+  }
+  .nav__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    font-size: 1.05rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .nav__dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: var(--aji);
+    border: 2px solid var(--ink);
+  }
+  .nav__links {
+    display: flex;
+    align-items: center;
+    gap: clamp(0.75rem, 2vw, 1.75rem);
+    margin-left: auto;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .nav__links a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .nav__links a:hover {
+    color: var(--aji);
+  }
+  .nav__crumb {
+    font-family: var(--font-display);
+    font-weight: 700;
+    background: var(--amarillo);
+    border: var(--stroke);
+    border-radius: 999px;
+    padding: 0.2rem 0.8rem;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  .eduHero {
+    padding-block: clamp(3.5rem, 9vw, 7rem);
+    border-bottom: 3px solid var(--ink);
+  }
+  .eduTitle {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    font-size: clamp(2.6rem, 1.4rem + 6vw, 5rem);
+    line-height: 0.95;
+    margin: 0.4rem 0 1.2rem;
+  }
+  .eduLead {
+    max-width: 46rem;
+    font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.2rem);
+    color: var(--ink-soft);
+    margin-bottom: clamp(2rem, 5vw, 3.2rem);
+  }
+
+  .eduGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.3rem;
+  }
+  .eduCard {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 18px;
+    padding: 1.4rem 1.4rem 1.6rem;
+    box-shadow: var(--shadow-hard);
+  }
+  .eduCard[data-off='true'] {
+    background: color-mix(in srgb, var(--cream) 82%, var(--ink) 4%);
+    box-shadow: 4px 4px 0 color-mix(in srgb, var(--ink) 55%, transparent);
+  }
+  .eduTag {
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    background: var(--c, var(--amarillo));
+    border: var(--stroke);
+    border-radius: 999px;
+    padding: 0.18rem 0.7rem;
+  }
+  .eduCard h2 {
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 1.1rem + 1vw, 1.7rem);
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.05;
+  }
+  .eduCard p {
+    margin: 0;
+    color: var(--ink-soft);
+    flex: 1;
+  }
+  .eduBtn {
+    margin-top: 0.4rem;
+  }
+  .eduSoon {
+    margin-top: 0.4rem;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    border: 2px dashed color-mix(in srgb, var(--ink) 45%, transparent);
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+  }
+
+  .eduBack {
+    margin: clamp(2rem, 5vw, 3rem) 0 0;
+  }
+
+  .eduFoot {
+    padding: 1.4rem 0;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 720px) {
+    .nav__links {
+      display: none;
+    }
+  }
+</style>

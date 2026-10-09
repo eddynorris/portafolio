@@ -6,6 +6,8 @@ import Proyectos from '../sections/Proyectos.astro';
 import Skills from '../sections/Skills.astro';
 import Contacto from '../sections/Contacto.astro';
 import { perfil } from '../data/portfolio';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
 <Layout>
@@ -17,6 +19,12 @@ import { perfil } from '../data/portfolio';
     <nav class="nav__links" aria-label="Principal">
       <a href="#proyectos">Proyectos</a>
       <a href="#skills">Skills</a>
+      <span class="nav__group">
+        <a class="nav__menu" href={`${base}/educador`}>Educador <i class="nav__caret" aria-hidden="true">▾</i></a>
+        <span class="nav__pop">
+          <a href={`${base}/educador/ddd-puertos-y-adaptadores`}>DDD, Puertos y Adaptadores</a>
+        </span>
+      </span>
       <a href="#contacto">Contacto</a>
     </nav>
     <a class="btn btn--small" href="#contacto">Hablemos</a>
@@ -167,6 +175,59 @@ import { perfil } from '../data/portfolio';
   .nav__links a:hover::after {
     transform: scaleX(1);
     transform-origin: left;
+  }
+  .nav__group {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  .nav__caret {
+    font-style: normal;
+    font-size: 0.62em;
+    display: inline-block;
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+  }
+  .nav__group:hover .nav__caret {
+    transform: translateY(1px);
+  }
+  .nav__pop {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    left: -0.8rem;
+    display: flex;
+    flex-direction: column;
+    min-width: max-content;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 12px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 0.4rem;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(6px);
+    transition:
+      opacity 0.18s ease,
+      transform 0.18s ease,
+      visibility 0.18s;
+  }
+  .nav__group:hover .nav__pop,
+  .nav__group:focus-within .nav__pop {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+  }
+  .nav__pop a {
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+  .nav__pop a::after {
+    content: none;
+  }
+  .nav__pop a:hover {
+    background: color-mix(in srgb, var(--amarillo) 40%, transparent);
   }
   .btn--small {
     padding: 0.5rem 1.05rem;

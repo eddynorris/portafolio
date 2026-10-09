@@ -1,0 +1,454 @@
+/* ================= Parque DDD: escena + HUD ================= */
+
+.pk {
+  --pkPanel: clamp(19rem, 27vw, 23.5rem);
+  position: relative;
+}
+
+.pkStage {
+  position: relative;
+  height: 100svh;
+  min-height: 540px;
+  overflow: hidden;
+  background: #bde8ff;
+  border-bottom: 3px solid var(--ink);
+}
+
+.pkCanvas {
+  position: absolute;
+  inset: 0;
+}
+
+.pkHud {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pkHud > * {
+  pointer-events: auto;
+}
+
+/* ---------- cabecera ---------- */
+.pkHead {
+  position: absolute;
+  top: 1.1rem;
+  left: var(--gutter);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+  pointer-events: none;
+}
+
+.pkHead > * {
+  pointer-events: auto;
+}
+
+.pkHome {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--paper);
+  border: var(--stroke);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform 0.16s ease;
+}
+
+.pkHome:hover {
+  transform: translate(-1px, -1px);
+}
+
+.pkTitle {
+  font-size: clamp(1.8rem, 0.9rem + 3vw, 2.7rem);
+  text-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55),
+    0 0 18px rgba(255, 255, 255, 0.4);
+}
+
+.pkSub {
+  font-size: clamp(0.85rem, 0.8rem + 0.3vw, 1rem);
+  font-weight: 500;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 78%, transparent);
+  border-radius: 8px;
+  padding: 0.15rem 0.5rem;
+}
+
+.pkCrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-display);
+  font-size: clamp(0.68rem, 0.62rem + 0.25vw, 0.8rem);
+  font-weight: 700;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  border: var(--stroke);
+  border-radius: 999px;
+  padding: 0.14rem 0.7rem;
+  box-shadow: 2px 2px 0 var(--ink);
+}
+
+.pkCrumb a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--aji);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+}
+
+.pkCrumb a:hover {
+  color: var(--aji);
+}
+
+/* ---------- controles ---------- */
+.pkControls {
+  position: absolute;
+  left: var(--gutter);
+  bottom: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  z-index: 4;
+}
+
+.pkPlay {
+  width: 3.5rem;
+  height: 3.5rem;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: var(--stroke);
+  border-radius: 50%;
+  background: var(--aji);
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.2s ease;
+}
+
+.pkPlay svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  fill: var(--cream);
+}
+
+.pkPlay[data-pausado='true'] {
+  background: var(--amarillo);
+}
+
+.pkPlay[data-pausado='true'] svg {
+  fill: var(--ink);
+}
+
+.pkPlay:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.pkPlay:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.pkSeg {
+  display: flex;
+  align-items: stretch;
+  border: var(--stroke);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.pkSeg span {
+  display: grid;
+  place-items: center;
+  padding-inline: 0.7rem 0.2rem;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.pkSeg button {
+  border: 0;
+  background: transparent;
+  padding: 0.5rem 0.72rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.86rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pkSeg button + button {
+  border-left: 2px solid var(--ink);
+}
+
+.pkSeg button[aria-pressed='true'] {
+  background: var(--amarillo);
+}
+
+.pkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: var(--stroke);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 0.55rem 0.95rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.pkBtn svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+}
+
+.pkBtn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink);
+}
+
+.pkBtn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.pkBtn[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--cream);
+}
+
+.pkState {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: var(--stroke);
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 4px 4px 0 var(--ink);
+  padding: 0.5rem 0.9rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+.pkState i {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background: var(--lima-deep);
+  border: 2px solid var(--ink);
+  animation: pkPulse 2s ease-in-out infinite;
+}
+
+.pkState[data-on='false'] i {
+  background: var(--aji);
+  animation: none;
+}
+
+@keyframes pkPulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+}
+
+/* ---------- panel de ficha ---------- */
+.pkPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  border-radius: 16px;
+  box-shadow: 6px 6px 0 var(--ink);
+  padding: 1.1rem 1.15rem 1.15rem;
+}
+
+.pkPanelTag {
+  align-self: flex-start;
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: var(--amarillo);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  padding: 0.18rem 0.65rem;
+}
+
+.pkPanel h2 {
+  font-size: clamp(1.2rem, 1rem + 0.8vw, 1.5rem);
+  line-height: 1.05;
+}
+
+.pkPanel p {
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
+.pkRegla {
+  background: color-mix(in srgb, var(--amarillo) 42%, var(--cream));
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  padding: 0.6rem 0.72rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.45;
+}
+
+.pkRegla b {
+  font-family: var(--font-display);
+  margin-right: 0.3rem;
+}
+
+.pkIntro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pkIntro ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.pkIntro li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.pkSwatch {
+  width: 0.85rem;
+  height: 0.85rem;
+  flex: none;
+  border: 2px solid var(--ink);
+  border-radius: 4px;
+}
+
+.pkChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding-top: 0.75rem;
+  border-top: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
+.pkChip {
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--cream);
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.pkChip:hover {
+  background: color-mix(in srgb, var(--amarillo) 55%, var(--cream));
+}
+
+.pkChip[aria-pressed='true'] {
+  background: var(--amarillo);
+}
+
+/* ---------- responsive ---------- */
+@media (min-width: 901px) {
+  .pkCanvas {
+    right: calc(var(--gutter) + var(--pkPanel) + 0.9rem);
+  }
+
+  .pkPanel {
+    position: absolute;
+    z-index: 5;
+    top: 1.1rem;
+    right: var(--gutter);
+    width: var(--pkPanel);
+    max-height: calc(100% - 2.2rem);
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .pkStage {
+    height: 72svh;
+    min-height: 380px;
+  }
+
+  .pkHead {
+    top: 0.8rem;
+    left: var(--gutter);
+  }
+
+  .pkControls {
+    left: var(--gutter);
+    right: var(--gutter);
+    bottom: 0.8rem;
+    gap: 0.45rem;
+  }
+
+  .pkState {
+    order: -1;
+  }
+
+  .pkBtn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .pkPanel {
+    margin: 1.1rem var(--gutter) 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .pkPlay {
+    width: 3.1rem;
+    height: 3.1rem;
+  }
+
+  .pkSeg span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkState i {
+    animation: none;
+  }
+}

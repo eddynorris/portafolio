@@ -1,0 +1,487 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import ParqueApp from '../../components/parque/ParqueApp.tsx';
+import { CONCEPTOS } from '../../components/parque/park/layout';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const controles = [
+  {
+    t: 'Pausa total',
+    d: 'El botón grande (o la barra espaciadora) detiene el flujo donde esté: invitados, eventos y nubes se congelan al instante.',
+  },
+  {
+    t: 'Velocidad',
+    d: '×0,5, ×1 o ×2. El reloj del parque acelera; las reglas del dominio no cambian, solo el tiempo.',
+  },
+  {
+    t: 'Reiniciar',
+    d: 'Vacía el parque y vuelve a arrancar la primera solicitud desde la taquilla.',
+  },
+  {
+    t: 'Etiquetas',
+    d: 'Muestra u oculta los rótulos flotantes de cada edificio si la escena se ve muy cargada.',
+  },
+];
+
+const equivalencias = [
+  ['Entidad y Value Object', 'Núcleo del hexágono', 'El castillo'],
+  ['Agregado y su raíz', 'El interior de la aplicación', 'La puerta del castillo'],
+  ['Caso de uso / servicio de aplicación', 'Puerto entrante (driving)', 'La taquilla y el camino'],
+  ['Repositorio', 'Puerto saliente + adaptador', 'La bodega (Postgres)'],
+  ['Contexto acotado', 'El hexágono de otro modelo', 'Las zonas cercadas'],
+  ['Evento de dominio', 'Publicación hacia un puerto de salida', 'Los orbes → el mástil'],
+  ['Infraestructura (SQL, SMTP, API externa)', 'Adaptadores driven', 'Bodega, correo y antena'],
+];
+
+const precisiones = [
+  'driving / primary = quien inicia la conversación (izquierda); driven / secondary = a quien la aplicación llama (derecha). Algunos resúmenes invierten estos términos: la fuente primaria de Cockburn es inequívoca.',
+  'Puertos y adaptadores salió en 2005 de la mano de Alistair Cockburn; el dibujo del hexágono es de los años noventa. El 6 no significa nada: el hexágono solo deja espacio para enchufar puertos.',
+  'Domain-Driven Design es de Eric Evans (2003). Los eventos de dominio no están en ese libro: son una adición posterior, hoy parte del DDD táctico.',
+  '“Las dependencias apuntan hacia dentro” es la formulación canónica de Clean Architecture. En Cockburn la regla es que el interior no dependa del exterior: los adaptadores importan los puertos que define la aplicación, nunca al revés.',
+];
+---
+
+<Layout
+  title="Educador · DDD, Puertos y Adaptadores — Parque DDD"
+  description="Simulación interactiva de Domain-Driven Design y arquitectura hexagonal con estética de parque de atracciones: controles de pausa, flujo en vivo y fichas en español."
+>
+  <ParqueApp client:only="react" />
+
+  <main>
+    <!-- ============ CÓMO LEER ============ -->
+    <section id="manual" class="pzSec">
+      <div class="wrap">
+        <p class="eyebrow reveal">Manual de uso</p>
+        <h2 class="section-title reveal">Cómo se lee el parque</h2>
+
+        <div class="pzLegend reveal">
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--aji)"></span>
+            <div>
+              <h3>Un invitado = una solicitud</h3>
+              <p>
+                Entra por la taquilla con una cajita roja (el comando). La caja desaparece cuando
+                el dominio la procesa: ese es el caso de uso haciendo su trabajo.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--amarillo)"></span>
+            <div>
+              <h3>Un orbe = un evento de dominio</h3>
+              <p>
+                Si el castillo termina algo interesante, publica un hecho: un orbe amarillo viaja
+                hasta el mástil para quien quiera escucharlo.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--teal)"></span>
+            <div>
+              <h3>La derecha = el mundo de fuera</h3>
+              <p>
+                Bodega, correo y antena están fuera de la valla: son adaptadores driven. Solo se
+                llega a ellos por un puerto, y la aplicación nunca ve SQL, SMTP ni internet.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--lima-deep)"></span>
+            <div>
+              <h3>Las vallas = fronteras de contexto</h3>
+              <p>
+                Dentro de cada zona manda su propio lenguaje. Cruzar la valla con el mismo
+                término no significa cruzar con el mismo modelo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pzCtl reveal">
+          <h3>Controles</h3>
+          <ul>
+            {
+              controles.map((c) => (
+                <li>
+                  <strong>{c.t}.</strong> {c.d}
+                </li>
+              ))
+            }
+            <li>
+              <strong>Tocar un edificio</strong> abre su ficha (también los rótulos y los botones
+              del panel). Tocar el césped la cierra.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ LUGARES ============ -->
+    <section class="pzSec pzSec--ink">
+      <div class="wrap">
+        <p class="eyebrow reveal">Fichas</p>
+        <h2 class="section-title reveal">Los siete lugares del parque</h2>
+        <div class="pzCards">
+          {
+            CONCEPTOS.map((c, i) => (
+              <article class="pzCard reveal">
+                <span class="pzCard__num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="pzCard__tag">{c.tag}</span>
+                <h3>{c.title}</h3>
+                <p>{c.largo}</p>
+                <p class="pzCard__regla">
+                  <b>Regla:</b> {c.regla}
+                </p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TABLA ============ -->
+    <section class="pzSec">
+      <div class="wrap">
+        <p class="eyebrow reveal">Mapa</p>
+        <h2 class="section-title reveal">DDD y hexagonal, capa por capa</h2>
+        <p class="pzLead reveal">
+          DDD te dice <em>qué modelar</em>; la arquitectura hexagonal te dice <em>cómo
+          organizarlo</em>. Esta es la traducción entre ambos — y dónde vive cada fila del parque.
+        </p>
+        <div class="pzTableWrap reveal">
+          <table class="pzTable">
+            <thead>
+              <tr>
+                <th scope="col">DDD (qué modelar)</th>
+                <th scope="col">Hexagonal (cómo se organiza)</th>
+                <th scope="col">En el parque</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                equivalencias.map(([a, b, c]) => (
+                  <tr>
+                    <td>{a}</td>
+                    <td>{b}</td>
+                    <td>{c}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRECISIÓN ============ -->
+    <section class="pzSec pzSec--note">
+      <div class="wrap">
+        <p class="eyebrow reveal">Notación precisa</p>
+        <h2 class="section-title reveal">Lo que este parque corrige</h2>
+        <ol class="pzNotes reveal">
+          {
+            precisiones.map((p) => (
+              <li>{p}</li>
+            ))
+          }
+        </ol>
+        <p class="pzSrc reveal">
+          Fuentes: Eric Evans, <em>Domain-Driven Design</em> (2003) · Alistair Cockburn,
+          <em> Hexagonal Architecture / Ports &amp; Adapters</em> (2005) · Vaughn Vernon,
+          <em> Implementing DDD</em> (2013) · Robert C. Martin, <em>Clean Architecture</em>
+          (2017).
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pzFoot">
+    <div class="wrap pzFoot__inner">
+      <a class="btn" href={`${base}/`}>← Volver al inicio</a>
+      <p>Parque DDD · simulación hecha con Astro + React Three Fiber</p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  .pzSec {
+    padding-block: clamp(3.5rem, 8vw, 6.5rem);
+    border-bottom: 3px solid var(--ink);
+  }
+
+  .pzSec .eyebrow {
+    margin-bottom: 0.8rem;
+  }
+
+  .pzSec--ink {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .pzSec--ink .eyebrow {
+    color: var(--cream);
+  }
+
+  .pzSec--note {
+    background: color-mix(in srgb, var(--amarillo) 22%, var(--cream));
+  }
+
+  /* ---------- leyenda ---------- */
+  .pzLegend {
+    margin-top: 2.2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+    gap: 1.1rem;
+  }
+
+  .pzLegend__item {
+    display: flex;
+    gap: 0.85rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.1rem 1.1rem 1.2rem;
+  }
+
+  .pzDot {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.3rem;
+    border-radius: 5px;
+    border: 2px solid var(--ink);
+    background: var(--c, var(--amarillo));
+    transform: rotate(-6deg);
+  }
+
+  .pzLegend h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+    min-height: 2.3em;
+  }
+
+  .pzLegend p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .pzCtl {
+    margin-top: 2.2rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.3rem 1.4rem;
+  }
+
+  .pzCtl h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .pzCtl ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  .pzCtl strong {
+    color: var(--ink);
+  }
+
+  /* ---------- fichas ---------- */
+  .pzCards {
+    margin-top: 2.4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.2rem;
+  }
+
+  .pzCard {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+    border: var(--stroke);
+    border-radius: 16px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.4rem 1.3rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .pzCard__num {
+    position: absolute;
+    top: -0.85rem;
+    right: 1rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
+    background: var(--amarillo);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .pzCard__tag {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .pzCard h3 {
+    font-size: 1.28rem;
+  }
+
+  .pzCard p {
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .pzCard__regla {
+    margin-top: auto;
+    background: color-mix(in srgb, var(--amarillo) 38%, var(--cream));
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .pzCard__regla b {
+    font-family: var(--font-display);
+    margin-right: 0.3rem;
+  }
+
+  /* ---------- tabla ---------- */
+  .pzLead {
+    margin-top: 1.2rem;
+    max-width: 46rem;
+    font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+    color: var(--ink-soft);
+  }
+
+  .pzLead em {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--ink);
+    background: linear-gradient(
+      transparent 58%,
+      var(--amarillo) 58%,
+      var(--amarillo) 94%,
+      transparent 94%
+    );
+  }
+
+  .pzTableWrap {
+    margin-top: 2.2rem;
+    overflow-x: auto;
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    background: var(--paper);
+  }
+
+  .pzTable {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .pzTable th,
+  .pzTable td {
+    text-align: left;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .pzTable th {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .pzTable tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .pzTable td:last-child {
+    font-weight: 600;
+  }
+
+  /* ---------- notas ---------- */
+  .pzNotes {
+    margin-top: 2rem;
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 52rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .pzNotes li {
+    padding-left: 0.4rem;
+  }
+
+  .pzNotes li::marker {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--aji);
+  }
+
+  .pzSrc {
+    margin-top: 1.8rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    max-width: 52rem;
+  }
+
+  .pzSrc em {
+    font-style: italic;
+  }
+
+  /* ---------- footer ---------- */
+  .pzFoot {
+    background: var(--ink);
+    color: var(--cream);
+    padding-block: 2.2rem;
+  }
+
+  .pzFoot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.92rem;
+  }
+
+  .pzFoot p {
+    color: color-mix(in srgb, var(--cream) 60%, transparent);
+  }
+
+  @media (max-width: 720px) {
+    .pzTable th,
+    .pzTable td {
+      padding: 0.7rem 0.8rem;
+    }
+  }
+</style>
