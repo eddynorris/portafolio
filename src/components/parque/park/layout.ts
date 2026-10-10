@@ -186,7 +186,7 @@ export const CONCEPTOS: Concepto[] = [
     corto: 'Dominio',
     tag: 'DDD · donde viven las reglas',
     body: 'El castillo no mira al exterior: aquí no hay HTTP, ni SQL, ni SMTP. Solo reglas de negocio expresadas en entidades, value objects y servicios de dominio.',
-    regla: 'Las dependencias apuntan hacia dentro: el núcleo no importa infraestructura.',
+    regla: 'El núcleo no depende del exterior: los adaptadores importan los puertos, nunca al revés.',
     largo:
       'Los visitantes entran por la puerta y nadie rodea el castillo: así se protege el agregado (su raíz y su interior). Si mañana cambias el framework web o la base de datos, estas paredes no se mueven. Aquí también vive el lenguaje ubicuo: el código del castillo habla el mismo idioma que el negocio, sin traducciones raras.',
   },
@@ -208,7 +208,7 @@ export const CONCEPTOS: Concepto[] = [
     body: 'La aplicación define el puerto “guardar pedido” en términos del dominio: ni siquiera sabe que existe una base de datos. Esta bodega es el adaptador que lo implementa con SQL.',
     regla: 'Cambias Postgres por MongoDB: nace un adaptador nuevo y el castillo no se entera.',
     largo:
-      'En DDD el repositorio se declara en el dominio y se implementa en la infraestructura, y solo el agregado raíz tiene repositorio: guardar una línea de pedido por su cuenta saltaría sus reglas. En hexagonal, ese repositorio es el adaptador del puerto saliente (driven port): la interfaz la posee la aplicación; la tecnología la enchufa el adaptador.',
+      'En DDD el repositorio se declara en el dominio y se implementa en la infraestructura, y solo el agregado raíz tiene repositorio: guardar una línea de pedido por su cuenta saltaría sus reglas. En hexagonal, la interfaz del repositorio es el puerto saliente (driven port) que posee la aplicación, y su implementación es el adaptador que enchufa la tecnología.',
   },
   {
     id: 'correo',
