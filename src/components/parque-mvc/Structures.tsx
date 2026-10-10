@@ -252,7 +252,7 @@ function ArcoSalida() {
       </mesh>
       <mesh position={[-0.22, 3.3, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[2.4, 1.15]} />
-        <meshBasicMaterial map={signTexture('RESPUESTA', 'la vista responde')} side={THREE.DoubleSide} transparent />
+        <meshBasicMaterial map={signTexture('RESPUESTA', 'la vista responde al cliente')} side={THREE.DoubleSide} transparent />
       </mesh>
     </group>
   );

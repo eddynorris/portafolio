@@ -5,10 +5,11 @@ import * as THREE from 'three';
 import { INK, shadowTexture } from '../scene/toon';
 import { ToonMat } from '../parque/park/Island';
 import { simTime } from '../parque/park/simClock';
-import { ORBE, PARADAS, RUTA, type Vec2 } from './layout';
+import { PARADAS, RUTA, type Vec2 } from './layout';
 
-/** Invitado del parque MVC: una petición caminando por el ciclo
- *  petición → controlador → modelo → vista → respuesta. */
+/** Invitado del parque MVC: una petición caminando por el flujo web completo
+ *  petición → controlador → modelo → controlador (resultado) → vista → respuesta.
+ *  El controlador se visita dos veces (es el hub). */
 
 type Fase = 'ruta' | 'dwell' | 'die';
 
@@ -25,8 +26,6 @@ type Invitado = {
   ang: number;
   esc: number;
 };
-
-type Orbe = { activo: boolean; u: number };
 
 const CAMISA = ['#ff5a3c', '#14a8a8', '#ff4f9a', '#ffc93c', '#7ed957', '#2f9fe0', '#8f6bd8'];
 const PIEL = ['#ffd9b0', '#f2b98c', '#c98a52', '#8a5a34'];
@@ -50,9 +49,10 @@ export function Flow({
 }) {
   const grupos = useRef<(THREE.Group | null)[]>([]);
   const cajas = useRef<(THREE.Mesh | null)[]>([]);
+  const cajasResultado = useRef<(THREE.Mesh | null)[]>([]);
+  const cajasRespuesta = useRef<(THREE.Mesh | null)[]>([]);
   const engranajes = useRef<(THREE.Mesh | null)[]>([]);
   const destellos = useRef<(THREE.Mesh | null)[]>([]);
-  const orbes = useRef<(THREE.Group | null)[]>([]);
 
   const invitados = useMemo<Invitado[]>(
     () =>
@@ -71,7 +71,6 @@ export function Flow({
       })),
     [],
   );
-  const orbesEstado = useMemo<Orbe[]>(() => Array.from({ length: 4 }, () => ({ activo: false, u: 0 })), []);
   const plantilla = useMemo(
     () =>
       Array.from({ length: MAX }, (_, i) => ({
@@ -81,28 +80,15 @@ export function Flow({
     [],
   );
 
-  const reloj = useRef({ spawn: 0.3, pendientes: 0 });
+  const reloj = useRef({ spawn: 0.3 });
 
   useEffect(() => {
-    reloj.current = { spawn: 0.3, pendientes: 0 };
+    reloj.current = { spawn: 0.3 };
     invitados.forEach((g) => {
       g.activo = false;
       g.esc = 0;
     });
-    orbesEstado.forEach((o) => {
-      o.activo = false;
-      o.u = 0;
-    });
-  }, [resetTick, invitados, orbesEstado]);
-
-  const bezier = (u: number) => {
-    const k = 1 - u;
-    return [
-      k * k * ORBE.desde[0] + 2 * k * u * ORBE.ctrl[0] + u * u * ORBE.hasta[0],
-      k * k * ORBE.desde[1] + 2 * k * u * ORBE.ctrl[1] + u * u * ORBE.hasta[1],
-      k * k * ORBE.desde[2] + 2 * k * u * ORBE.ctrl[2] + u * u * ORBE.hasta[2],
-    ] as [number, number, number];
-  };
+  }, [resetTick, invitados]);
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -186,10 +172,6 @@ export function Flow({
       } else if (g.fase === 'dwell') {
         g.espera -= sdt;
         if (g.espera <= 0) {
-          // terminó la parada N: tras el modelo, sale el orbe de notificación
-          if (g.parada === 1 && reloj.current.pendientes < 4) {
-            reloj.current.pendientes += 1;
-          }
           g.parada += 1;
           g.fase = 'ruta';
         }
@@ -207,7 +189,11 @@ export function Flow({
       grp.scale.setScalar(0.82 * g.esc);
 
       const caja = cajas.current[i];
-      if (caja) caja.visible = g.parada === 0; // aún lleva la petición en mano
+      if (caja) caja.visible = g.parada === 0; // petición en mano (hasta el controlador)
+      const cajaR = cajasResultado.current[i];
+      if (cajaR) cajaR.visible = g.parada === 2; // resultado del modelo, de vuelta al controlador
+      const cajaResp = cajasRespuesta.current[i];
+      if (cajaResp) cajaResp.visible = g.parada === 4; // respuesta que sale hacia el cliente
       const eng = engranajes.current[i];
       if (eng) {
         eng.visible = g.fase === 'dwell' && g.parada === 1; // el modelo hace su lógica
@@ -215,7 +201,7 @@ export function Flow({
       }
       const dest = destellos.current[i];
       if (dest) {
-        dest.visible = g.fase === 'dwell' && g.parada === 2; // la vista renderiza
+        dest.visible = g.fase === 'dwell' && g.parada === 3; // la vista renderiza
         if (dest.visible) {
           const k = 1 + Math.sin(now * 7) * 0.18;
           dest.scale.setScalar(k);
@@ -223,40 +209,6 @@ export function Flow({
       }
     }
 
-    /* ---- notificación modelo → vista ---- */
-    if (sdt > 0 && reloj.current.pendientes > 0) {
-      const o = orbesEstado.find((v) => !v.activo);
-      if (o) {
-        o.activo = true;
-        o.u = 0;
-        reloj.current.pendientes -= 1;
-      } else {
-        reloj.current.pendientes = 0;
-      }
-    }
-
-    for (let i = 0; i < orbesEstado.length; i++) {
-      const o = orbesEstado[i];
-      const grp = orbes.current[i];
-      if (!grp) continue;
-      if (!o.activo) {
-        grp.visible = false;
-        continue;
-      }
-      o.u += sdt / 2.6;
-      if (o.u >= 1) {
-        o.activo = false;
-        grp.visible = false;
-        continue;
-      }
-      const [x, y, z] = bezier(o.u);
-      const inSc = Math.min(1, o.u * 8);
-      const outSc = Math.min(1, (1 - o.u) * 6);
-      grp.visible = true;
-      grp.position.set(x, y + Math.sin(now * 3 + i) * 0.12, z);
-      grp.rotation.y = now * 2;
-      grp.scale.setScalar(Math.min(inSc, outSc));
-    }
   });
 
   return (
@@ -296,6 +248,30 @@ export function Flow({
             <ToonMat color="#ff5a3c" ramp={[0.55, 0.75, 1]} />
             <Outlines thickness={0.03} color={INK} />
           </mesh>
+          {/* cajita ámbar = el resultado del modelo, de regreso al controlador */}
+          <mesh
+            ref={(el) => {
+              cajasResultado.current[i] = el;
+            }}
+            position={[-0.26, 0.4, 0.12]}
+            visible={false}
+          >
+            <boxGeometry args={[0.22, 0.2, 0.26]} />
+            <ToonMat color="#ffc93c" ramp={[0.55, 0.75, 1]} />
+            <Outlines thickness={0.03} color={INK} />
+          </mesh>
+          {/* cajita verde = la respuesta que sale hacia el cliente */}
+          <mesh
+            ref={(el) => {
+              cajasRespuesta.current[i] = el;
+            }}
+            position={[0.26, 0.4, 0.12]}
+            visible={false}
+          >
+            <boxGeometry args={[0.22, 0.2, 0.26]} />
+            <ToonMat color="#7ed957" ramp={[0.55, 0.75, 1]} />
+            <Outlines thickness={0.03} color={INK} />
+          </mesh>
           {/* engranaje = lógica del modelo */}
           <mesh
             ref={(el) => {
@@ -323,21 +299,6 @@ export function Flow({
         </group>
       ))}
 
-      {orbesEstado.map((_, i) => (
-        <group
-          key={i}
-          ref={(el) => {
-            orbes.current[i] = el;
-          }}
-          visible={false}
-        >
-          <mesh>
-            <octahedronGeometry args={[0.3, 0]} />
-            <ToonMat color="#ffc93c" ramp={[0.7, 0.88, 1]} />
-            <Outlines thickness={0.035} color={INK} />
-          </mesh>
-        </group>
-      ))}
     </group>
   );
 }

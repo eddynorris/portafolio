@@ -173,9 +173,10 @@ export default function MvcApp() {
             <h2>Modelo-Vista-Controlador</h2>
             <div className="pkIntro">
               <p>
-                Los invitados son <strong>peticiones</strong> que entran por la taquilla, se
-                interpretan en el controlador, cambian el modelo y terminan dibujadas por la vista.
-                Toca un edificio —o usa los botones— para ver qué concepto representa.
+                Los invitados son <strong>peticiones</strong> que entran por la taquilla, pasan por
+                el controlador (el hub), ejecutan el modelo, vuelven al controlador con el resultado
+                y terminan dibujadas por la vista, que responde al cliente. Toca un edificio —o usa
+                los botones— para ver qué concepto representa.
               </p>
               <ul>
                 <li>
@@ -184,15 +185,15 @@ export default function MvcApp() {
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#14a8a8' }} />
-                  Controlador: traduce la entrada en acciones
+                  Controlador: el hub — recibe la petición y el resultado, elige la vista
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ffc93c' }} />
-                  Amarillo: el modelo cambia y notifica
+                  Amarillo: el modelo calcula y devuelve el resultado
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ff4f9a' }} />
-                  Vista: dibuja el estado y responde
+                  Vista: dibuja el estado y responde al cliente
                 </li>
               </ul>
             </div>

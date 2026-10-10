@@ -12,7 +12,7 @@ const controles = [
   },
   {
     t: 'Velocidad',
-    d: '×0,5, ×1 o ×2. El reloj del parque acelera; el orden petición → controlador → modelo → vista no cambia, solo el tiempo.',
+    d: '×0,5, ×1 o ×2. El reloj del parque acelera; el orden petición → controlador → modelo → controlador → vista no cambia, solo el tiempo.',
   },
   {
     t: 'Reiniciar',
@@ -26,15 +26,24 @@ const controles = [
 
 const equivalencias = [
   ['Taquilla y arco', 'Petición HTTP o evento de UI', 'El usuario inicia; aquí no hay lógica'],
-  ['Controlador', 'Controller o handler', 'Traduce la entrada y despacha'],
-  ['Modelo', 'Dominio: entidades y reglas', 'Estado + negocio; notifica cambios'],
-  ['Vista', 'Template o componente', 'Dibuja el estado; no lo decide'],
-  ['Orbe modelo → vista', 'Observer / refresco', 'La vista se entera del cambio'],
+  [
+    'Controlador (2 paradas)',
+    'Controller o handler',
+    'Recibe la petición, llama al modelo, recibe el resultado y elige la vista',
+  ],
+  ['Modelo', 'Dominio: entidades y reglas', 'Ejecuta la lógica y devuelve el resultado'],
+  ['Vista', 'Template o componente', 'Dibuja el estado y genera la respuesta'],
+  [
+    'Arco verde',
+    'HTTP response',
+    'La respuesta sale al cliente — la vista no vuelve al controlador',
+  ],
 ];
 
 const precisiones = [
   'MVC nació en la interfaz de Smalltalk-80 (Xerox PARC) y se describe en Krasner & Pope (1988). Es un patrón de interfaz de usuario, no una arquitectura de software por sí solo.',
-  'El parque muestra el flujo web —a veces llamado Model 2 (término de las JSP de Sun, frente al Modelo 1)—: petición → controlador → modelo → plantilla. En el Smalltalk clásico el camino era más circular: la vista observa al modelo y su controlador pareja traduce la entrada.',
+  'El parque muestra el flujo web —a veces llamado Model 2 (término de las JSP de Sun, frente al Modelo 1)—: petición → controlador → modelo → controlador → plantilla → respuesta. En el Smalltalk clásico el camino era más circular: el modelo notifica a sus dependientes (vistas) y la vista se repinta sola.',
+  'El controlador es el hub: la petición pasa por él dos veces —al recibirla y al recibir el resultado del modelo—. La vista NO devuelve nada al controlador: su render es la respuesta que sale hacia el cliente.',
   'El controlador no devuelve HTML ni ejecuta SQL: traduce la entrada en órdenes al modelo y, cuando hace falta, a la vista; en la web además elige qué vista se renderiza. Si empieza a hacer de negocio o de presentación, algo anda mal.',
   'MVC no es “tres capas”. Es un reparto de papeles entre modelo, vista y controlador, no una arquitectura por niveles: suele implementarse dentro de la capa de presentación de una app con capas, con el modelo en la capa de negocio — y a la vez puede existir MVC sin capas y capas sin MVC. La confusión es común porque muchos frameworks usan las tres palabras a la vez.',
   'En Django el patrón se llama Model–View–Template: la capa llamada “vista” asume el papel de despacho —más cercano al controlador de MVC— y la plantilla es la vista. Lee las responsabilidades, no los rótulos.',
@@ -43,7 +52,7 @@ const precisiones = [
 
 <Layout
   title="Educador · MVC — Parque MVC"
-  description="Simulación interactiva de Modelo-Vista-Controlador con estética de parque de atracciones: ciclo petición → controlador → modelo → vista, controles de pausa y fichas en español."
+  description="Simulación interactiva de Modelo-Vista-Controlador con estética de parque de atracciones: ciclo petición → controlador → modelo → controlador → vista → respuesta, controles de pausa y fichas en español."
 >
   <MvcApp client:only="react" />
 
@@ -61,27 +70,27 @@ const precisiones = [
               <h3>Un invitado = una petición</h3>
               <p>
                 Entra por la taquilla con una cajita roja: es la petición cruda (GET /pedidos, un
-                clic, un submit). La caja viaja con él hasta el controlador.
+                clic, un submit). La lleva hasta el controlador y se la entrega.
               </p>
             </div>
           </div>
           <div class="pzLegend__item">
             <span class="pzDot" style="--c: var(--teal)"></span>
             <div>
-              <h3>Una parada = el controlador</h3>
+              <h3>El controlador es el hub</h3>
               <p>
-                Frente al kiosco teal el invitado se detiene: alguien traduce la petición en una
-                acción sobre el modelo. Sin estados guardados y sin HTML.
+                Frente al kiosco teal se detiene dos veces: primero recibe la petición y despacha
+                al modelo; después recibe el resultado y elige la vista.
               </p>
             </div>
           </div>
           <div class="pzLegend__item">
             <span class="pzDot" style="--c: var(--amarillo)"></span>
             <div>
-              <h3>El modelo cambia y notifica</h3>
+              <h3>El modelo calcula y devuelve</h3>
               <p>
-                En la parada amarilla gira el engranaje: lógica del dominio ejecutándose. Al
-                terminar, un orbe viaja hasta la vista — el modelo publica que algo cambió.
+                En la parada amarilla gira el engranaje (lógica del dominio). Al terminar, el
+                invitado regresa al controlador con una cajita ámbar: el resultado.
               </p>
             </div>
           </div>
@@ -90,8 +99,8 @@ const precisiones = [
             <div>
               <h3>La vista renderiza y responde</h3>
               <p>
-                Última parada: la pantalla muestra el estado vigente. El invitado continúa y sale
-                por el arco verde con la respuesta.
+                Última parada: la pantalla dibuja el estado. El invitado sale por el arco verde
+                con la respuesta — que va al cliente, no al controlador.
               </p>
             </div>
           </div>

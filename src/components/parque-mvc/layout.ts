@@ -35,19 +35,24 @@ export type Concepto = {
 /* Ruta del invitado: petición → controlador → modelo → vista → salida */
 /* ------------------------------------------------------------------ */
 
-/** Espina principal (z ≈ 0.8); los edificios quedan al norte (z < 0). */
+/** Espina principal (z ≈ 0.8); los edificios quedan al norte (z < 0).
+ *  El invitado recorre el flujo web completo:
+ *  petición → controlador → modelo → controlador (resultado) → vista → respuesta.
+ *  El controlador se visita dos veces: es el hub por el que pasa la petición. */
 export const ESPINA: Vec2[] = [
   [-16.6, 0.8],
   [-10.8, 0.8],
-  [-5.6, 0.8],
-  [0.2, 0.8],
-  [6.4, 0.8],
+  [-5.6, 0.8], // controlador (1ª parada: recibe la petición)
+  [0.2, 0.8], // modelo
+  [-5.6, 0.8], // controlador (2ª parada: recibe el resultado)
+  [6.4, 0.8], // vista
   [11.5, 1.4],
   [15.8, 3.4],
 ];
 
-/** Índices de la espina donde el invitado se detiene (frente a cada edificio). */
-export const PARADAS = [2, 3, 4] as const;
+/** Índices de la espina donde el invitado se detiene:
+ *  controlador → modelo → controlador → vista. */
+export const PARADAS = [2, 3, 4, 5] as const;
 
 /** Camino completo del invitado (una sola trayectoria). */
 export const RUTA: Vec2[] = ESPINA;
@@ -119,7 +124,7 @@ export const CONCEPTOS: Concepto[] = [
     body: 'Recibe la petición, le da forma, pide al modelo lo que hace falta y elige qué vista la mostrará. No guarda estado y no escribe HTML.',
     regla: 'Controlador = traductor de entradas en acciones sobre el modelo.',
     largo:
-      'En Smalltalk-80 cada vista tenía su controlador pareja, encargado de traducir el ratón y el teclado en órdenes al modelo y/o a la vista (Burbeck, 1987). En la web (Model 2: el handler de Spring MVC, el controller de Rails) el controlador es más bien un despachador: parsea la URL, ejecuta la acción en el modelo y devuelve la vista elegida — en Django ese papel lo cumple la capa llamada «vista». En ambos mundos vale la misma regla: si el controlador empieza a guardar estado o a armar HTML, el papel se le está yendo de las manos.',
+      'En Smalltalk-80 cada vista tenía su controlador pareja, encargado de traducir el ratón y el teclado en órdenes al modelo y/o a la vista (Burbeck, 1987). En la web (Model 2: el handler de Spring MVC, el controller de Rails) el controlador es el hub por el que pasa la petición dos veces: la recibe, ejecuta la acción en el modelo, recibe el resultado y elige la vista con esos datos — en Django ese papel lo cumple la capa llamada «vista». En ambos mundos vale la misma regla: si el controlador empieza a guardar estado o a armar HTML, el papel se le está yendo de las manos.',
   },
   {
     id: 'modelo',
@@ -129,7 +134,7 @@ export const CONCEPTOS: Concepto[] = [
     body: 'El estado y las reglas: entidades, cálculos, invariantes. No sabe que existen pantallas ni controladores; simplemente cambia y notifica.',
     regla: 'El modelo no importa vistas: en Smalltalk las vistas lo observan.',
     largo:
-      'El nombre engaña: el “modelo” no es solo el esquema de la base de datos ni el ORM. Es el dominio con su lenguaje y sus reglas —lo que en DDD llamarías agregados y servicios de dominio—. Su contrato con el resto del mundo es doble: recibe acciones (agregar pedido, aplicar descuento) y publica cambios (PedidoCreado) para que quien quiera escuche.',
+      'El nombre engaña: el “modelo” no es solo el esquema de la base de datos ni el ORM. Es el dominio con su lenguaje y sus reglas —lo que en DDD llamarías agregados y servicios de dominio—. En el flujo web recibe una acción del controlador (agregar pedido, aplicar descuento), ejecuta la lógica y devuelve el resultado al controlador. (En el Smalltalk clásico, además, publicaba cambios para que sus vistas observadoras se repintaran.)',
   },
   {
     id: 'vista',
@@ -139,7 +144,7 @@ export const CONCEPTOS: Concepto[] = [
     body: 'La vista lee el modelo y lo dibuja: template HTML, componente React, pantalla de una app nativa. Muestra el estado; no lo decide.',
     regla: 'La vista decide cómo se ve, nunca qué significa.',
     largo:
-      'En Smalltalk la vista observaba al modelo con el patrón observer: cambiaba el modelo y la pantalla se repintaba sola. En la web no se repinta: alguien vuelve a ejecutar la vista con el estado vigente (render de la plantilla). Da igual el mecanismo; lo que importa es la dirección de la flecha: la vista depende del modelo, jamás al revés. Si el modelo empieza a construir HTML, MVC se ha roto.',
+      'En la web la vista no “observa” ni se repinta sola: el controlador le pasa los datos vigentes y ella los dibuja en un template. Ese render es la respuesta que sale hacia el cliente — la vista no devuelve nada al controlador. Lo que importa es la dirección de la flecha: la vista depende del modelo, jamás al revés. Si el modelo empieza a construir HTML, MVC se ha roto.',
   },
 ];
 
@@ -158,12 +163,4 @@ export { ARBOLES, ARBUSTOS, BANCOS, FAROLAS };
 export const VALLAS: [Vec2, Vec2][] = [];
 export const VALLAS_EXTRA: [Vec2, Vec2][] = [];
 
-/* ------------------------------------------------------------------ */
-/* Notificación modelo → vista (orbe)                                 */
-/* ------------------------------------------------------------------ */
 
-export const ORBE = {
-  desde: [0.2, 3.6, -2.2] as [number, number, number],
-  ctrl: [3.3, 5.8, -1.0] as [number, number, number],
-  hasta: [6.4, 3.1, -2.0] as [number, number, number],
-};
