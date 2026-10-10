@@ -288,6 +288,53 @@ textarea {
   }
 }
 
+/* ---------- hero estático (fallback sin WebGL / reduced-motion) ---------- */
+.heroStatic {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.heroStatic__sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--sky-deep), var(--sky) 55%, color-mix(in srgb, var(--sky) 60%, white));
+}
+[data-theme='night'] .heroStatic__sky {
+  background: linear-gradient(180deg, #05060f, #0d1b33 60%, #1a2b4a);
+}
+.heroStatic__sea {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 34%;
+  background: color-mix(in srgb, var(--sky-deep) 70%, black);
+}
+[data-theme='night'] .heroStatic__sea {
+  background: #0a1424;
+}
+.heroStatic__island {
+  position: absolute;
+  left: 50%;
+  bottom: 16%;
+  width: min(58%, 520px);
+  aspect-ratio: 2.4 / 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #ffe7c4;
+  border: 3px solid var(--ink);
+}
+[data-theme='night'] .heroStatic__island {
+  background: #4a3a28;
+}
+.heroStatic__cart {
+  position: absolute;
+  left: 50%;
+  bottom: 26%;
+  width: min(30%, 240px);
+  transform: translateX(-50%);
+}
+
 /* ---------- reveal on scroll ---------- */
 .reveal {
   opacity: 0;

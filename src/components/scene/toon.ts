@@ -6,7 +6,8 @@ const ramps = new Map<string, THREE.DataTexture>();
 
 /** Rampas de luz duras en pocos escalones = look cel. */
 export function toonRamp(name: string, stops: number[]): THREE.DataTexture {
-  const hit = ramps.get(name);
+  const key = `${name}|${stops.join(',')}`;
+  const hit = ramps.get(key);
   if (hit) return hit;
   const data = new Uint8Array(stops.length);
   stops.forEach((v, i) => (data[i] = Math.max(0, Math.min(255, Math.round(v * 255)))));
@@ -15,7 +16,7 @@ export function toonRamp(name: string, stops: number[]): THREE.DataTexture {
   tex.magFilter = THREE.NearestFilter;
   tex.generateMipmaps = false;
   tex.needsUpdate = true;
-  ramps.set(name, tex);
+  ramps.set(key, tex);
   return tex;
 }
 

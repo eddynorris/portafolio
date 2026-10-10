@@ -17,6 +17,7 @@ import {
 } from './toon';
 import { clamp01, easeOutBounce, easeOutQuint, lerp, prefersReduced, wave } from './anim';
 import { setFocus, type HotspotId } from './store';
+import { useSceneTheme } from './sceneTheme';
 
 /** Partes clicables del carrito: ancho a encuadrar y offset del centro. */
 const HOTSPOT = {
@@ -34,10 +35,9 @@ export function Toon({
   ramp = RAMP_MAIN,
   ...rest
 }: { color: string; ramp?: string } & Omit<THREE.MeshToonMaterialParameters, 'color' | 'gradientMap'>) {
-  const gradientMap = useMemo(
-    () => toonRamp(ramp, ramp === RAMP_SOFT ? [0.52, 0.76, 1] : [0.4, 0.68, 1]),
-    [ramp],
-  );
+  const th = useSceneTheme();
+  const stops = ramp === RAMP_SOFT ? th.toon.soft : th.toon.main;
+  const gradientMap = useMemo(() => toonRamp(ramp, stops), [ramp, stops]);
   return <meshToonMaterial color={color} gradientMap={gradientMap} {...rest} />;
 }
 

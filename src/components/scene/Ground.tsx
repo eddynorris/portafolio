@@ -4,9 +4,12 @@ import { Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { INK, RAMP_MAIN, toonRamp } from './toon';
 import { prefersReduced } from './anim';
+import { useSceneTheme } from './sceneTheme';
 
-function ToonMat({ color, ramp = [0.4, 0.68, 1] }: { color: string; ramp?: number[] }) {
-  const gradientMap = useMemo(() => toonRamp(`g:${ramp.join(',')}`, ramp), [ramp]);
+function ToonMat({ color, ramp }: { color: string; ramp?: number[] }) {
+  const th = useSceneTheme();
+  const stops = ramp ?? th.toon.main;
+  const gradientMap = useMemo(() => toonRamp(`g:${stops.join(',')}`, stops), [stops]);
   return <meshToonMaterial color={color} gradientMap={gradientMap} />;
 }
 
