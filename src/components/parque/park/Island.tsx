@@ -262,7 +262,19 @@ function Nubes() {
 
 /* ---------------- isla ---------------- */
 
-export function Island({ paths }: { paths: Vec2[][] }) {
+/** Isla compartida por los parques del apartado Educador (DDD, MVC…).
+ *  Vallas y estanque son opcionales: cada mundo pasa los suyos. */
+export function Island({
+  paths,
+  vallas = VALLAS,
+  vallasExtra = VALLAS_CONTEXTO,
+  estanque = [-15.2, 3.6] as Vec2 | null,
+}: {
+  paths: Vec2[][];
+  vallas?: [Vec2, Vec2][];
+  vallasExtra?: [Vec2, Vec2][];
+  estanque?: Vec2 | null;
+}) {
   const grass = grassTexture();
   return (
     <group>
@@ -288,12 +300,11 @@ export function Island({ paths }: { paths: Vec2[][] }) {
         <Camino key={i} pts={p} />
       ))}
 
-      {/* valla de la aplicación: separa el interior (dominio) del mundo de fuera */}
-      {VALLAS.map(([a, b], i) => (
+      {/* vallas del mundo */}
+      {vallas.map(([a, b], i) => (
         <Valla key={i} a={a} b={b} />
       ))}
-      {/* vallas de contexto: un recinto por cada kiosco */}
-      {VALLAS_CONTEXTO.map(([a, b], i) => (
+      {vallasExtra.map(([a, b], i) => (
         <Valla key={`c${i}`} a={a} b={b} />
       ))}
 
@@ -310,7 +321,7 @@ export function Island({ paths }: { paths: Vec2[][] }) {
       {ARBUSTOS.map((a, i) => (
         <Arbusto key={i} at={a} i={i} />
       ))}
-      <Estanque at={[-15.2, 3.6]} />
+      {estanque && <Estanque at={estanque} />}
 
       <Nubes />
     </group>
