@@ -8,6 +8,7 @@ import {
   type SitioId,
 } from './park/layout';
 import { prefersReduced } from '../scene/anim';
+import { ThemeToggleReact } from '../ThemeToggleReact';
 import '../../styles/parque.css';
 
 const VELOCIDADES = [0.5, 1, 2];
@@ -87,6 +88,7 @@ export default function ParqueApp() {
             <a className="pkHome" href={`${base}/`}>
               ← Inicio
             </a>
+            <ThemeToggleReact />
             <p className="pkCrumb">
               <a href={`${base}/educador`}>Educador</a>
               <span aria-hidden="true">/</span>

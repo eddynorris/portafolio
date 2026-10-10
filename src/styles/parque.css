@@ -10,7 +10,7 @@
   height: 100svh;
   min-height: 540px;
   overflow: hidden;
-  background: #bde8ff;
+  background: var(--pk-sky);
   border-bottom: 3px solid var(--ink);
 }
 

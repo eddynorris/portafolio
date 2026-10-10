@@ -19,6 +19,33 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <title>{title}</title>
     <meta name="description" content={description} />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#fff7ea" />
+    <script is:inline>
+      /* Fija el tema antes del primer render: sin flash. Síncrono en <head>. */
+      (function () {
+        try {
+          var t = null;
+          try {
+            t = localStorage.getItem('portfolio-theme');
+          } catch (e) {
+            /* storage bloqueado */
+          }
+          if (t !== 'light' && t !== 'night') {
+            t =
+              window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'night'
+                : 'light';
+          }
+          var r = document.documentElement;
+          r.setAttribute('data-theme', t);
+          r.style.colorScheme = t;
+          var m = document.querySelector('meta[name="theme-color"]');
+          if (m) m.setAttribute('content', t === 'night' ? '#0c0a1a' : '#fff7ea');
+        } catch (e) {
+          /* nunca bloquear el render */
+        }
+      })();
+    </script>
     <link rel="icon" href={`${base}/favicon.svg`} type="image/svg+xml" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

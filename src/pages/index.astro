@@ -2,6 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import HeroScene from '../components/HeroScene.tsx';
 import CartPanel from '../components/CartPanel';
+import ThemeToggle from '../components/ThemeToggle.astro';
 import Proyectos from '../sections/Proyectos.astro';
 import Skills from '../sections/Skills.astro';
 import Contacto from '../sections/Contacto.astro';
@@ -28,6 +29,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       </span>
       <a href="#contacto">Contacto</a>
     </nav>
+    <ThemeToggle />
     <a class="btn btn--small" href="#contacto">Hablemos</a>
   </header>
 
@@ -299,7 +301,12 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     font-style: normal;
     position: relative;
     color: var(--ink);
-    background: linear-gradient(transparent 58%, var(--amarillo) 58%, var(--amarillo) 94%, transparent 94%);
+    background: linear-gradient(
+      transparent 58%,
+      var(--highlight, var(--amarillo)) 58%,
+      var(--highlight, var(--amarillo)) 94%,
+      transparent 94%
+    );
     padding-inline: 0.1em;
   }
   .hero__lead {
@@ -423,8 +430,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   /* ---------------- marquee ---------------- */
   .marquee {
     overflow: hidden;
-    background: var(--ink);
-    color: var(--cream);
+    background: var(--band-bg);
+    color: var(--band-fg);
     border-bottom: 3px solid var(--ink);
     padding-block: 0.85rem;
   }
@@ -456,8 +463,8 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
   /* ---------------- footer ---------------- */
   .foot {
-    background: var(--ink);
-    color: var(--cream);
+    background: var(--band-bg);
+    color: var(--band-fg);
     padding-block: 2.2rem;
     border-top: 3px solid var(--ink);
   }
@@ -468,5 +475,5 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     justify-content: space-between;
     font-size: 0.9rem;
   }
-  .foot__meta { color: color-mix(in srgb, var(--cream) 55%, transparent); }
+  .foot__meta { color: color-mix(in srgb, var(--band-fg) 60%, transparent); }
 </style>

@@ -6,6 +6,7 @@ import { simTick } from '../parque/park/simClock';
 import { Structures } from './Structures';
 import { Flow } from './Guests';
 import { ESPINA, VALLAS, VALLAS_EXTRA, type SitioId } from './layout';
+import { useParkEnv } from '../parque/park/parkEnv';
 
 /** Unidades de mundo que deben caber en el menor lado del lienzo. */
 const FIT_W = 45;
@@ -45,6 +46,7 @@ export function MvcCanvas({
   onSelect: (id: SitioId | null) => void;
   resetTick: number;
 }) {
+  const env = useParkEnv();
   return (
     <Canvas
       flat
@@ -55,15 +57,23 @@ export function MvcCanvas({
       onPointerMissed={() => onSelect(null)}
       style={{ position: 'absolute', inset: 0 }}
     >
-      <color attach="background" args={['#bde8ff']} />
+      <color attach="background" args={[env.bg]} />
 
       <SimDriver playing={playing} speed={speed} />
       <Camara />
 
-      <ambientLight intensity={0.55} />
-      <hemisphereLight args={['#fff4dd', '#a8e6ff', 0.55]} />
-      <directionalLight position={[14, 22, 10]} intensity={1.5} color="#fff6e2" />
-      <directionalLight position={[-12, 8, -8]} intensity={0.5} color="#9adcff" />
+      <ambientLight intensity={env.ambient} />
+      <hemisphereLight args={[env.hemi[0], env.hemi[1], env.hemi[2]]} />
+      <directionalLight
+        position={env.key.position as [number, number, number]}
+        intensity={env.key.intensity}
+        color={env.key.color}
+      />
+      <directionalLight
+        position={env.fill.position as [number, number, number]}
+        intensity={env.fill.intensity}
+        color={env.fill.color}
+      />
 
       <Island paths={[ESPINA]} vallas={VALLAS} vallasExtra={VALLAS_EXTRA} />
       <Structures selected={selected} onSelect={onSelect} labels={labels} />

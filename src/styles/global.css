@@ -22,6 +22,43 @@
 
   --maxw: 1200px;
   --gutter: clamp(1.25rem, 4vw, 3rem);
+
+  /* ---- tokens semánticos (bandas, acentos, foco) ---- */
+  --band-bg: var(--ink);
+  --band-fg: var(--cream);
+  --on-accent: var(--ink);
+  --focus: var(--teal);
+  --highlight: var(--amarillo);
+  --pk-sky: #bde8ff;
+}
+
+/* =========================================================================
+   MODO NOCHE — se aplica con <html data-theme="night"> (fuente de verdad).
+   Invierte papel/tinta y aclara los acentos para conservar contraste AA.
+   ========================================================================= */
+[data-theme='night'] {
+  --ink: #f2ecff;
+  --ink-soft: #b3a8d4;
+  --cream: #0c0a1a;
+  --paper: #171230;
+
+  --sky: #4a8fd4;
+  --sky-deep: #1f5fa8;
+  --lima: #7fe362;
+  --lima-deep: #4bb85a;
+  --aji: #ff6a4d;
+  --amarillo: #ffd23f;
+  --teal: #2fd4d4;
+  --fucsia: #ff74b0;
+
+  --band-bg: #1a1333;
+  --band-fg: #f2ecff;
+  --on-accent: #141024;
+  --focus: #46e6e6;
+  --highlight: #8a5a00;
+  --pk-sky: #0f1e33;
+
+  color-scheme: dark;
 }
 
 *,
@@ -138,7 +175,7 @@ textarea {
   border: var(--stroke);
   border-radius: 999px;
   background: var(--amarillo);
-  color: var(--ink);
+  color: var(--on-accent);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.98rem;
@@ -147,7 +184,10 @@ textarea {
   cursor: pointer;
   transition:
     transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.18s ease;
+    box-shadow 0.18s ease,
+    background-color 0.28s ease,
+    color 0.28s ease,
+    border-color 0.28s ease;
 }
 
 .btn:hover {
@@ -167,6 +207,85 @@ textarea {
 .btn--ink {
   background: var(--ink);
   color: var(--cream);
+}
+
+/* ---------- toggle de tema (día / noche) ---------- */
+.themeToggle {
+  position: relative;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  /* área táctil ≥ 44px */
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: var(--stroke);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: var(--shadow-hard-sm);
+  transition:
+    transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.18s ease,
+    background-color 0.28s ease,
+    color 0.28s ease,
+    border-color 0.28s ease;
+}
+.themeToggle:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.themeToggle:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+.themeToggle:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+.themeToggle__icon {
+  grid-area: 1 / 1;
+  width: 20px;
+  height: 20px;
+  transition:
+    opacity 0.2s ease,
+    transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+/* por defecto (día) se muestra el sol; en noche, la luna */
+.themeToggle__icon--sun {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+.themeToggle__icon--moon {
+  opacity: 0;
+  transform: scale(0.5) rotate(-40deg);
+  position: absolute;
+}
+[data-theme='night'] .themeToggle__icon--sun {
+  opacity: 0;
+  transform: scale(0.5) rotate(40deg);
+}
+[data-theme='night'] .themeToggle__icon--moon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  position: static;
+}
+
+/* ---------- transición de color global al cambiar de tema ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  .nav,
+  .marquee,
+  .foot,
+  .sec,
+  .strip__bar,
+  .pkStage {
+    transition:
+      background-color 0.28s ease,
+      color 0.28s ease,
+      border-color 0.28s ease;
+  }
 }
 
 /* ---------- reveal on scroll ---------- */
