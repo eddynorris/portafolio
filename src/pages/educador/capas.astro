@@ -1,0 +1,517 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import CapasApp from '../../components/parque-capas/CapasApp.tsx';
+import { CONCEPTOS } from '../../components/parque-capas/layout';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const controles = [
+  {
+    t: 'Pausa total',
+    d: 'El botón grande (o la barra espaciadora) detiene el parque donde esté: invitados, engranajes y paquetes de red se congelan al instante.',
+  },
+  {
+    t: 'Nivel (el conmutador estrella)',
+    d: 'Alterna entre «1 proceso» (las tres capas en un solo proceso, monolito) y «3 procesos» (cada capa en su propio proceso, distribuido). Las capas no cambian; solo cambia el despliegue.',
+  },
+  {
+    t: 'Velocidad',
+    d: '×0,5, ×1 o ×2. El reloj del parque acelera; el orden presentación → negocio → datos y el regreso no cambian, solo el tiempo.',
+  },
+  {
+    t: 'Reiniciar',
+    d: 'Vacía el parque y vuelve a arrancar la primera petición desde la entrada.',
+  },
+  {
+    t: 'Etiquetas',
+    d: 'Muestra u oculta los rótulos flotantes de cada capa si la escena se ve muy cargada.',
+  },
+];
+
+const equivalencias = [
+  ['Presentación (capa)', 'UI / interfaz', 'Recibe la entrada, la manda al negocio y dibuja la salida'],
+  ['Negocio (capa)', 'Dominio / reglas', 'El corazón: entidades, casos de uso, invariantes'],
+  ['Datos (capa)', 'Acceso a datos', 'Persistencia: SQL, ORM, archivos; la única que sabe de tecnología'],
+  [
+    '1 proceso (recuadro rojo)',
+    'Monolito · 1 tier',
+    'Las tres capas viven en un mismo proceso; cruzar de capa es una llamada en memoria',
+  ],
+  [
+    '3 procesos (recuadros + cables)',
+    'Distribuido · 3 tiers',
+    'Cada capa corre en su proceso; cruzar de capa es un salto de red con latencia',
+  ],
+];
+
+const precisiones = [
+  '«Capa» (layer) y «nivel» (tier) son planos distintos: la capa describe cómo se organiza el CÓDIGO (separación de responsabilidades); el nivel describe DÓNDE CORRE (una frontera física de proceso, contenedor o máquina). Nada obliga a que coincidan en número.',
+  'N capas NO significan N niveles: puedes tener tres capas en un solo proceso —un monolito bien ordenado—, o desplegar las mismas tres capas en dos o tres niveles. La confusión nace de frameworks y diagramas que usan «tres capas» y «tres niveles» como sinónimos.',
+  'Cada frontera de nivel cuesta red: serialización, latencia, reintentos y nuevos modos de fallo. Por eso se corta en varios niveles solo cuando hay una razón real (aislamiento de seguridad, escalado independiente, ciclo de vida separado), no porque «sean tres capas».',
+  'La flecha de dependencia apunta hacia abajo: la presentación usa al negocio, y el negocio define lo que la capa de datos debe cumplir. La capa de datos no conoce a la de presentación, ni el negocio conoce el SQL. Si una capa de abajo importa a una de arriba, la arquitectura está invertida.',
+  'El patrón MVC vive dentro de la capa de presentación: reparte papeles (modelo, vista, controlador) entre la interfaz y el inicio de la llamada al negocio, no define capas ni niveles por sí solo.',
+  'El número de capas es un número N, no necesariamente tres: hay arquitecturas en dos, tres o más capas. «N capas» enfatiza que la separación es una elección de diseño, no una cifra mágica.',
+];
+---
+
+<Layout
+  title="Educador · Capas — Parque Capas"
+  description="Simulación interactiva de arquitectura en N capas y N niveles con estética de parque: capas lógicas (presentación, negocio, datos) frente a niveles físicos (monolito vs distribuido), con controles y fichas en español."
+>
+  <CapasApp client:only="react" />
+
+  <main>
+    <!-- ============ CÓMO LEER ============ -->
+    <section id="manual" class="pzSec">
+      <div class="wrap">
+        <p class="eyebrow reveal">Manual de uso</p>
+        <h2 class="section-title reveal">Cómo se lee el parque</h2>
+
+        <div class="pzLegend reveal">
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--fucsia)"></span>
+            <div>
+              <h3>Tres capas, siempre iguales</h3>
+              <p>
+                Los tres edificios —presentación (fucsia), negocio (amarillo) y datos (teal)— son
+                las capas lógicas del código. Estas nunca cambian: son una decisión de diseño.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--aji)"></span>
+            <div>
+              <h3>El invitado baja y sube</h3>
+              <p>
+                Una petición entra por la presentación, recorre negocio hasta datos (donde recoge
+                el dato) y sube de vuelta renderizando la respuesta.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--lima)"></span>
+            <div>
+              <h3>El conmutador cambia el despliegue</h3>
+              <p>
+                «1 proceso» junta las tres capas en un recuadro (monolito). «3 procesos» las
+                separa en tres recuadros con cables de red: cruzar de capa ahora cuesta latencia.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: var(--teal)"></span>
+            <div>
+              <h3>Capas ≠ niveles</h3>
+              <p>
+                El parque existe para demostrar una idea: el número de capas (tres) y el número de
+                niveles (uno, dos o tres) son decisiones distintas. Alterna y compruébalo.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pzCtl reveal">
+          <h3>Controles</h3>
+          <ul>
+            {
+              controles.map((c) => (
+                <li>
+                  <strong>{c.t}.</strong> {c.d}
+                </li>
+              ))
+            }
+            <li>
+              <strong>Tocar un edificio</strong> abre su ficha (también los rótulos y los botones
+              del panel). Tocar el césped la cierra.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FICHAS ============ -->
+    <section class="pzSec pzSec--ink">
+      <div class="wrap">
+        <p class="eyebrow reveal">Fichas</p>
+        <h2 class="section-title reveal">Las capas y el despliegue</h2>
+        <div class="pzCards">
+          {
+            CONCEPTOS.map((c, i) => (
+              <article class="pzCard reveal">
+                <span class="pzCard__num">{String(i + 1).padStart(2, '0')}</span>
+                <span class="pzCard__tag">{c.tag}</span>
+                <h3>{c.title}</h3>
+                <p>{c.largo}</p>
+                <p class="pzCard__regla">
+                  <b>Regla:</b> {c.regla}
+                </p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TABLA ============ -->
+    <section class="pzSec">
+      <div class="wrap">
+        <p class="eyebrow reveal">Mapa</p>
+        <h2 class="section-title reveal">Capas y niveles, fila por fila</h2>
+        <p class="pzLead reveal">
+          La tabla separa los dos planos: las tres primeras filas son <em>capas lógicas</em> (una
+          decisión de diseño del código); las dos últimas son <em>niveles físicos</em> (una
+          decisión de despliegue que puedes cambiar sin tocar el código).
+        </p>
+        <div class="pzTableWrap reveal">
+          <table class="pzTable">
+            <thead>
+              <tr>
+                <th scope="col">En el parque</th>
+                <th scope="col">En una app</th>
+                <th scope="col">Qué es / qué hace</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                equivalencias.map(([a, b, c]) => (
+                  <tr>
+                    <td>{a}</td>
+                    <td>{b}</td>
+                    <td>{c}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ PRECISIÓN ============ -->
+    <section class="pzSec pzSec--note">
+      <div class="wrap">
+        <p class="eyebrow reveal">Notación precisa</p>
+        <h2 class="section-title reveal">Lo que este parque corrige</h2>
+        <ol class="pzNotes reveal">
+          {
+            precisiones.map((p) => (
+              <li>{p}</li>
+            ))
+          }
+        </ol>
+        <p class="pzSrc reveal">
+          Fuentes: Edsger W. Dijkstra, <em>“On the role of scientific thought”</em> (1974, EWD445)
+          · Frank Buschmann et al., <em>Pattern-Oriented Software Architecture, Vol. 1: A System
+          of Patterns</em> (1996) · Martin Fowler, <em>Patterns of Enterprise Application
+          Architecture</em> (2002) · Grady Booch, <em>Object-Oriented Analysis and Design with
+          Applications</em> (3ª ed., 2007) · Documentación de Microsoft sobre arquitectura por
+          niveles (N-Tier).
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pzFoot">
+    <div class="wrap pzFoot__inner">
+      <div>
+        <a class="btn" href={`${base}/`}>← Volver al inicio</a>
+        <a class="btn btn--ghost pzFoot__alt" href={`${base}/educador/mvc`}>
+          Ver el Parque MVC
+        </a>
+      </div>
+      <p>Parque Capas · simulación hecha con Astro + React Three Fiber</p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  .pzSec {
+    padding-block: clamp(3.5rem, 8vw, 6.5rem);
+    border-bottom: 3px solid var(--ink);
+  }
+
+  .pzSec .eyebrow {
+    margin-bottom: 0.8rem;
+  }
+
+  .pzSec--ink {
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .pzSec--ink .eyebrow {
+    color: var(--cream);
+  }
+
+  .pzSec--note {
+    background: color-mix(in srgb, var(--lima) 22%, var(--cream));
+  }
+
+  /* ---------- leyenda ---------- */
+  .pzLegend {
+    margin-top: 2.2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15.5rem, 1fr));
+    gap: 1.1rem;
+  }
+
+  .pzLegend__item {
+    display: flex;
+    gap: 0.85rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.1rem 1.1rem 1.2rem;
+  }
+
+  .pzDot {
+    flex: none;
+    width: 1.15rem;
+    height: 1.15rem;
+    margin-top: 0.3rem;
+    border-radius: 5px;
+    border: 2px solid var(--ink);
+    background: var(--c, var(--lima));
+    transform: rotate(-6deg);
+  }
+
+  .pzLegend h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.35rem;
+    min-height: 2.3em;
+  }
+
+  .pzLegend p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+
+  .pzCtl {
+    margin-top: 2.2rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.3rem 1.4rem;
+  }
+
+  .pzCtl h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.7rem;
+  }
+
+  .pzCtl ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    font-size: 0.95rem;
+    color: var(--ink-soft);
+  }
+
+  .pzCtl strong {
+    color: var(--ink);
+  }
+
+  /* ---------- fichas ---------- */
+  .pzCards {
+    margin-top: 2.4rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1.2rem;
+  }
+
+  .pzCard {
+    position: relative;
+    background: var(--paper);
+    color: var(--ink);
+    border: var(--stroke);
+    border-radius: 16px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 1.4rem 1.3rem 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .pzCard__num {
+    position: absolute;
+    top: -0.85rem;
+    right: 1rem;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
+    background: var(--lima);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 0.15rem 0.6rem;
+    box-shadow: 2px 2px 0 var(--ink);
+  }
+
+  .pzCard__tag {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  .pzCard h3 {
+    font-size: 1.28rem;
+  }
+
+  .pzCard p {
+    font-size: 0.93rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  .pzCard__regla {
+    margin-top: auto;
+    background: color-mix(in srgb, var(--lima) 38%, var(--cream));
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    padding: 0.6rem 0.7rem;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .pzCard__regla b {
+    font-family: var(--font-display);
+    margin-right: 0.3rem;
+  }
+
+  /* ---------- tabla ---------- */
+  .pzLead {
+    margin-top: 1.2rem;
+    max-width: 46rem;
+    font-size: clamp(1rem, 0.95rem + 0.3vw, 1.15rem);
+    color: var(--ink-soft);
+  }
+
+  .pzLead em {
+    font-style: normal;
+    font-weight: 700;
+    color: var(--ink);
+    background: linear-gradient(
+      transparent 58%,
+      var(--lima) 58%,
+      var(--lima) 94%,
+      transparent 94%
+    );
+  }
+
+  .pzTableWrap {
+    margin-top: 2.2rem;
+    overflow-x: auto;
+    border: var(--stroke);
+    border-radius: 14px;
+    box-shadow: var(--shadow-hard-sm);
+    background: var(--paper);
+  }
+
+  .pzTable {
+    width: 100%;
+    min-width: 34rem;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+
+  .pzTable th,
+  .pzTable td {
+    text-align: left;
+    padding: 0.85rem 1.1rem;
+    border-bottom: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  }
+
+  .pzTable th {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: var(--ink);
+    color: var(--cream);
+  }
+
+  .pzTable tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .pzTable td:last-child {
+    font-weight: 600;
+  }
+
+  /* ---------- notas ---------- */
+  .pzNotes {
+    margin-top: 2rem;
+    padding-left: 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    max-width: 52rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .pzNotes li {
+    padding-left: 0.4rem;
+  }
+
+  .pzNotes li::marker {
+    font-family: var(--font-display);
+    font-weight: 800;
+    color: var(--lima-deep);
+  }
+
+  .pzSrc {
+    margin-top: 1.8rem;
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+    max-width: 52rem;
+  }
+
+  .pzSrc em {
+    font-style: italic;
+  }
+
+  /* ---------- footer ---------- */
+  .pzFoot {
+    background: var(--ink);
+    color: var(--cream);
+    padding-block: 2.2rem;
+  }
+
+  .pzFoot__inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem 1.5rem;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.92rem;
+  }
+
+  .pzFoot__alt {
+    margin-left: 0.7rem;
+    color: var(--cream);
+  }
+
+  .pzFoot p {
+    color: color-mix(in srgb, var(--cream) 60%, transparent);
+  }
+
+  @media (max-width: 720px) {
+    .pzTable th,
+    .pzTable td {
+      padding: 0.7rem 0.8rem;
+    }
+
+    .pzFoot__alt {
+      display: inline-block;
+      margin: 0.8rem 0 0;
+    }
+  }
+</style>

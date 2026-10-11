@@ -1,0 +1,272 @@
+import { useEffect, useState } from 'react';
+import { CapasCanvas } from './CapasCanvas';
+import {
+  CONCEPTOS,
+  CONCEPTO_POR_ID,
+  SITIO_A_CONCEPTO,
+  type Despliegue,
+  type SitioId,
+} from './layout';
+import { prefersReduced } from '../scene/anim';
+import { ThemeToggleReact } from '../ThemeToggleReact';
+import '../../styles/parque.css';
+
+const VELOCIDADES = [0.5, 1, 2];
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+const IconPause = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <rect x="5" y="4" width="5" height="16" rx="1.4" />
+    <rect x="14" y="4" width="5" height="16" rx="1.4" />
+  </svg>
+);
+
+const IconPlay = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M7 4.6v14.8c0 1 1.1 1.6 2 1.1l11-7.4c.8-.5.8-1.7 0-2.2L9 3.5c-.9-.5-2 .1-2 1.1z" />
+  </svg>
+);
+
+const IconReset = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M12 5a7 7 0 1 0 6.3 4l-1.9.6A5 5 0 1 1 12 7v3l4.5-3.5L12 3v2z" />
+  </svg>
+);
+
+const IconTag = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M11.6 3H20a1 1 0 0 1 1 1v8.4a1 1 0 0 1-.3.7l-7.6 7.6a1 1 0 0 1-1.4 0l-7.4-7.4a1 1 0 0 1 0-1.4l7.6-7.6a1 1 0 0 1 .7-.3zM16.5 7.5a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2z" />
+  </svg>
+);
+
+const IconDown = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M11.3 3.3a1 1 0 0 1 1.4 0l7.6 7.6a1 1 0 0 1-1.4 1.4L13 6.4V20a1 1 0 1 1-2 0V6.4L5.5 12.3a1 1 0 0 1-1.4-1.4l7.2-7.6z" />
+  </svg>
+);
+
+const IDS_POR_CONCEPTO: Record<string, SitioId> = {
+  presentacion: 'presentacion',
+  negocio: 'negocio',
+  datos: 'datos',
+};
+
+export default function CapasApp() {
+  const [playing, setPlaying] = useState(() => !prefersReduced());
+  const [speed, setSpeed] = useState(1);
+  const [labels, setLabels] = useState(true);
+  const [selected, setSelected] = useState<SitioId | null>(null);
+  const [resetTick, setResetTick] = useState(0);
+  const [despliegue, setDespliegue] = useState<Despliegue>('unico');
+  // «Niveles» no tiene edificio propio: vive en el conmutador de despliegue.
+  const [nivelesOpen, setNivelesOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      e.preventDefault();
+      setPlaying((p) => !p);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const varios = despliegue === 'varios';
+
+  const concepto = nivelesOpen
+    ? CONCEPTO_POR_ID.niveles
+    : selected
+      ? CONCEPTO_POR_ID[SITIO_A_CONCEPTO[selected]]
+      : null;
+
+  const selectSitio = (id: SitioId | null) => {
+    setSelected(id);
+    setNivelesOpen(false);
+  };
+
+  const toggleDespliegue = (d: Despliegue) => {
+    setDespliegue(d);
+    setNivelesOpen(true);
+    setSelected(null);
+  };
+
+  return (
+    <div className="pk">
+      <div className="pkStage">
+        <div className="pkCanvas">
+          <CapasCanvas
+            playing={playing}
+            speed={speed}
+            labels={labels}
+            selected={selected}
+            onSelect={selectSitio}
+            resetTick={resetTick}
+            despliegue={despliegue}
+          />
+        </div>
+
+        <div className="pkHud">
+          <div className="pkHead">
+            <a className="pkHome" href={`${base}/`}>
+              ← Inicio
+            </a>
+            <ThemeToggleReact />
+            <p className="pkCrumb">
+              <a href={`${base}/educador`}>Educador</a>
+              <span aria-hidden="true">/</span>
+              Capas
+            </p>
+            <h1 className="pkTitle">Parque Capas</h1>
+            <p className="pkSub">Capas lógicas vs. niveles físicos</p>
+          </div>
+
+          <div className="pkControls" role="group" aria-label="Controles de la simulación">
+            <button
+              className="pkPlay"
+              data-pausado={!playing}
+              onClick={() => setPlaying((p) => !p)}
+              aria-pressed={!playing}
+              aria-label={playing ? 'Pausar el flujo' : 'Reanudar el flujo'}
+              title={playing ? 'Pausar (espacio)' : 'Reanudar (espacio)'}
+            >
+              {playing ? <IconPause /> : <IconPlay />}
+            </button>
+
+            {/* el conmutador estrella: 1 proceso vs 3 procesos */}
+            <div className="pkSeg" role="group" aria-label="Nivel de despliegue (tier)">
+              <span>nivel</span>
+              <button
+                onClick={() => toggleDespliegue('unico')}
+                aria-pressed={!varios}
+                aria-label="Desplegar las tres capas en un solo proceso (1 nivel)"
+              >
+                1 proceso
+              </button>
+              <button
+                onClick={() => toggleDespliegue('varios')}
+                aria-pressed={varios}
+                aria-label="Desplegar cada capa en su propio proceso (3 niveles)"
+              >
+                3 procesos
+              </button>
+            </div>
+
+            <div className="pkSeg" role="group" aria-label="Velocidad del flujo">
+              <span>velocidad</span>
+              {VELOCIDADES.map((v) => (
+                <button
+                  key={v}
+                  onClick={() => setSpeed(v)}
+                  aria-pressed={speed === v}
+                  aria-label={`Velocidad ${v === 0.5 ? '0,5' : v} veces`}
+                >
+                  {v === 0.5 ? '0,5×' : `${v}×`}
+                </button>
+              ))}
+            </div>
+
+            <button
+              className="pkBtn"
+              onClick={() => {
+                setResetTick((t) => t + 1);
+                setSelected(null);
+              }}
+            >
+              <IconReset />
+              Reiniciar
+            </button>
+
+            <button
+              className="pkBtn"
+              onClick={() => setLabels((l) => !l)}
+              aria-pressed={labels}
+              aria-label="Mostrar u ocultar etiquetas"
+            >
+              <IconTag />
+              Etiquetas
+            </button>
+
+            <a className="pkBtn" href="#manual">
+              <IconDown />
+              Manual
+            </a>
+
+            <span className="pkState" data-on={playing} aria-live="polite">
+              <i />
+              {playing
+                ? `${varios ? '3 procesos' : '1 proceso'} · ${speed === 0.5 ? '0,5' : speed}×`
+                : 'Flujo en pausa'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <aside className="pkPanel" aria-label="Ficha del concepto seleccionado">
+        <span className="pkPanelTag">{concepto ? concepto.tag : 'El parque'}</span>
+
+        {concepto ? (
+          <>
+            <h2>{concepto.title}</h2>
+            <p>{concepto.body}</p>
+            <div className="pkRegla">
+              <b>Regla:</b>
+              {concepto.regla}
+            </div>
+          </>
+        ) : (
+          <>
+            <h2>Capas ≠ Niveles</h2>
+            <div className="pkIntro">
+              <p>
+                Los tres edificios son las <strong>capas lógicas</strong> —presentación, negocio y
+                datos—, que nunca cambian. El conmutador «nivel» decide cuántos <em>procesos</em>{' '}
+                las ejecutan: uno (monolito) o tres (distribuido). Toca un edificio —o usa los
+                botones— para ver qué concepto representa.
+              </p>
+              <ul>
+                <li>
+                  <span className="pkSwatch" style={{ background: '#ff4f9a' }} />
+                  Presentación: la interfaz; traduce la entrada y dibuja la salida
+                </li>
+                <li>
+                  <span className="pkSwatch" style={{ background: '#ffc93c' }} />
+                  Negocio: las reglas del dominio; no conoce a nadie
+                </li>
+                <li>
+                  <span className="pkSwatch" style={{ background: '#14a8a8' }} />
+                  Datos: la persistencia; la única que sabe de SQL
+                </li>
+                <li>
+                  <span className="pkSwatch" style={{ background: '#ff5a3c' }} />
+                  Nivel: la frontera física; cruzarla cuesta red
+                </li>
+              </ul>
+            </div>
+          </>
+        )}
+
+        <div className="pkChips" role="group" aria-label="Ir a un concepto">
+          {CONCEPTOS.map((c) => (
+            <button
+              key={c.id}
+              className="pkChip"
+              aria-pressed={concepto?.id === c.id}
+              onClick={() => {
+                if (c.id === 'niveles') {
+                  toggleDespliegue('varios');
+                } else {
+                  selectSitio(IDS_POR_CONCEPTO[c.id]);
+                }
+              }}
+            >
+              {c.corto}
+            </button>
+          ))}
+        </div>
+      </aside>
+    </div>
+  );
+}
