@@ -15,6 +15,10 @@ const controles = [
     d: '×0,5, ×1 o ×2. El reloj del parque acelera; las reglas del dominio no cambian, solo el tiempo.',
   },
   {
+    t: 'Paso a paso',
+    d: 'Congela la ruta en cada uno de los cinco pasos y deja un botón “Siguiente” para avanzar a tu ritmo. El parque sigue respirando mientras la ruta espera.',
+  },
+  {
     t: 'Reiniciar',
     d: 'Vacía el parque y vuelve a arrancar la primera solicitud desde la taquilla.',
   },
@@ -25,20 +29,41 @@ const controles = [
 ];
 
 const equivalencias = [
-  ['Entidad y Value Object', 'Núcleo del hexágono', 'El castillo'],
-  ['Agregado y su raíz', 'El interior de la aplicación', 'La puerta del castillo'],
-  ['Caso de uso / servicio de aplicación', 'Puerto entrante (driving)', 'La taquilla y el camino'],
-  ['Repositorio', 'Puerto saliente + adaptador', 'La bodega (Postgres)'],
+  ['Entidad y Value Object', 'Núcleo del dominio, dentro del hexágono', 'El castillo'],
+  ['Agregado y su raíz', 'Núcleo del dominio, dentro del hexágono', 'El interior del castillo'],
+  ['Caso de uso / servicio de aplicación', 'Cumple el puerto y orquesta desde dentro', 'La oficina'],
+  ['Puerto (contrato)', 'Interfaz en la frontera del hexágono', 'El enchufe de la valla'],
+  ['Repositorio e infraestructura (SQL, SMTP, API externa)', 'Puertos salientes y adaptadores driven', 'Enchufe · bodega, antena y correo'],
   ['Contexto acotado', 'El hexágono de otro modelo', 'Las zonas cercadas'],
-  ['Evento de dominio', 'Publicación hacia un puerto de salida', 'Los orbes → el mástil'],
-  ['Infraestructura (SQL, SMTP, API externa)', 'Adaptadores driven', 'Bodega, correo y antena'],
+  ['Evento de dominio', 'Publicación hacia un puerto de salida', 'Los orbes → enchufe → correo'],
 ];
 
 const precisiones = [
-  'driving / primary = quien inicia la conversación (izquierda); driven / secondary = a quien la aplicación llama (derecha). Algunos resúmenes invierten estos términos: la fuente primaria de Cockburn es inequívoca.',
-  'Puertos y adaptadores salió en 2005 de la mano de Alistair Cockburn; el dibujo del hexágono es de los años noventa. El 6 no significa nada: el hexágono solo deja espacio para enchufar puertos.',
-  'Domain-Driven Design es de Eric Evans (2003). Los eventos de dominio no están en ese libro: son una adición posterior, hoy parte del DDD táctico.',
+  'driving / primary = quien inicia la conversación; driven / secondary = a quien la aplicación llama. Algunos resúmenes invierten estos términos: lo que se sostiene en el texto de Cockburn es quién inicia y quién es llamado, no siempre el nombre que se le da a cada lado.',
+  'Puertos y adaptadores salió en 2005 de la mano de Alistair Cockburn; el dibujo del hexágono es de 1994. El 6 no significa nada: el hexágono solo deja espacio para enchufar puertos.',
+  'El hexágono original no define qué hay dentro: dibuja la frontera y sus enchufes. El reparto entre aplicación y dominio llega después, con las capas de Evans (2003), la Onion Architecture de Palermo (2008) y la Clean Architecture de Martin.',
+  'Domain-Driven Design es de Eric Evans (2003). Los eventos de dominio no están en ese libro: Evans los describe en 2009 (QCon London) y hoy son parte del DDD táctico.',
+  'Un agregado por transacción. Entre agregados, consistencia eventual: Vernon insiste en que los eventos se guardan en la misma transacción que el cambio del agregado y se entregan después del commit, cada suscriptor con la suya.',
   '“Las dependencias apuntan hacia dentro” es la formulación canónica de Clean Architecture. En Cockburn la regla es que el interior no dependa del exterior: los adaptadores importan los puertos que define la aplicación, nunca al revés.',
+];
+
+const glosario = [
+  {
+    t: 'Entidad vs. Value Object',
+    d: 'La entidad tiene identidad y ciclo de vida: un Pedido se reconoce aunque cambie su contenido. El value object no: solo valor. Dos importes de 30 € son el mismo importe; dos pedidos con el mismo contenido, no.',
+  },
+  {
+    t: 'Servicio de dominio vs. de aplicación',
+    d: 'El de dominio expresa una regla de negocio que no cabe en una entidad ni en un VO, y habla el lenguaje ubicuo. El de aplicación (el caso de uso) solo orquesta: llama al dominio y a los puertos, sin reglas propias.',
+  },
+  {
+    t: 'Inyección de dependencias',
+    d: 'La aplicación declara qué necesita (el puerto) y quién decide qué llega es el exterior. El controlador REST, el CLI o un test pasan su adaptador al caso de uso: el núcleo nunca instancia SQL ni SMTP.',
+  },
+  {
+    t: 'Relaciones entre contextos',
+    d: 'Tres formas de convivir: anticorruption layer traduce el lenguaje ajeno al tuyo; lenguaje publicado expones tu modelo y el otro se adapta; cliente–proveedor reparte responsabilidades por contrato.',
+  },
 ];
 ---
 
@@ -61,8 +86,18 @@ const precisiones = [
             <div>
               <h3>Un invitado = una solicitud</h3>
               <p>
-                Entra por la taquilla con una cajita roja (el comando). La caja desaparece cuando
-                el dominio la procesa: ese es el caso de uso haciendo su trabajo.
+                Entra por la taquilla con una cajita. En cada cruce de frontera cambia de forma:
+                JSON, comando rojo, objeto de pedido y filas en la base de datos.
+              </p>
+            </div>
+          </div>
+          <div class="pzLegend__item">
+            <span class="pzDot" style="--c: #8f6bd8"></span>
+            <div>
+              <h3>La oficina = el caso de uso</h3>
+              <p>
+                Recibe el comando, pregunta al repositorio, manda al agregado, guarda el
+                resultado y publica el evento. El puerto es el contrato; ella es quien lo cumple.
               </p>
             </div>
           </div>
@@ -71,18 +106,19 @@ const precisiones = [
             <div>
               <h3>Un orbe = un evento de dominio</h3>
               <p>
-                Si el castillo termina algo interesante, publica un hecho: un orbe amarillo viaja
-                hasta el mástil para quien quiera escucharlo.
+                El castillo lo registra sin salir por ningún puerto. Tras el commit, sale por el
+                puerto de eventos hacia quien quiera escucharlo.
               </p>
             </div>
           </div>
           <div class="pzLegend__item">
             <span class="pzDot" style="--c: var(--teal)"></span>
             <div>
-              <h3>La derecha = el mundo de fuera</h3>
+              <h3>Ambos lados están fuera</h3>
               <p>
-                Bodega, correo y antena están fuera de la valla: son adaptadores driven. Solo se
-                llega a ellos por un puerto, y la aplicación nunca ve SQL, SMTP ni internet.
+                La taquilla a la izquierda y la bodega, el correo y la antena a la derecha son
+                adaptadores, igual de fuera. Los enchufes de la valla son los puertos; el
+                hexágono solo tiene paredes y huecos.
               </p>
             </div>
           </div>
@@ -121,7 +157,7 @@ const precisiones = [
     <section class="pzSec pzSec--ink">
       <div class="wrap">
         <p class="eyebrow reveal">Fichas</p>
-        <h2 class="section-title reveal">Los siete lugares del parque</h2>
+        <h2 class="section-title reveal">Los lugares del parque</h2>
         <div class="pzCards">
           {
             CONCEPTOS.map((c, i) => (
@@ -174,6 +210,24 @@ const precisiones = [
       </div>
     </section>
 
+    <!-- ============ GLOSARIO ============ -->
+    <section class="pzSec pzSec--ink">
+      <div class="wrap">
+        <p class="eyebrow reveal">Dudas frecuentes</p>
+        <h2 class="section-title reveal">Cuatro pares que se confunden</h2>
+        <div class="pzGlos">
+          {
+            glosario.map((g) => (
+              <article class="pzGlos__item reveal">
+                <h3>{g.t}</h3>
+                <p>{g.d}</p>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
     <!-- ============ PRECISIÓN ============ -->
     <section class="pzSec pzSec--note">
       <div class="wrap">
@@ -187,9 +241,12 @@ const precisiones = [
           }
         </ol>
         <p class="pzSrc reveal">
-          Fuentes: Eric Evans, <em>Domain-Driven Design</em> (2003) · Alistair Cockburn,
-          <em> Hexagonal Architecture / Ports &amp; Adapters</em> (2005) · Vaughn Vernon,
-          <em> Implementing DDD</em> (2013) · Robert C. Martin, <em>Clean Architecture</em>
+          Fuentes: Eric Evans, <em>Domain-Driven Design</em> (2003) y su charla sobre eventos de
+          dominio (QCon London, 2009) · Alistair Cockburn,
+          <em>Hexagonal Architecture</em> (2005) y <em>Hexagonal Architecture Explained</em> ·
+          Vaughn Vernon, <em>Implementing Domain-Driven Design</em> (2013), con el prólogo de
+          Eric Evans, y <em>Effective Aggregate Design</em> (2011) · Ralph Johnson y colaboradores
+          sobre la Onion Architecture (2008) · Robert C. Martin, <em>Clean Architecture</em>
           (2017).
         </p>
       </div>
@@ -363,6 +420,33 @@ const precisiones = [
   .pzCard__regla b {
     font-family: var(--font-display);
     margin-right: 0.3rem;
+  }
+
+  /* ---------- glosario ---------- */
+  .pzGlos {
+    margin-top: 2.2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16.5rem, 1fr));
+    gap: 1.1rem;
+  }
+
+  .pzGlos__item {
+    background: color-mix(in srgb, var(--cream) 7%, transparent);
+    border: 2px solid color-mix(in srgb, var(--cream) 32%, transparent);
+    border-radius: 14px;
+    padding: 1.15rem 1.15rem 1.2rem;
+  }
+
+  .pzGlos__item h3 {
+    font-size: 1.05rem;
+    margin-bottom: 0.45rem;
+    color: var(--amarillo);
+  }
+
+  .pzGlos__item p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: color-mix(in srgb, var(--cream) 82%, transparent);
   }
 
   /* ---------- tabla ---------- */

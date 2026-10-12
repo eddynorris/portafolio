@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { Island } from './Island';
 import { Structures } from './Structures';
 import { Flow } from './Guests';
-import { ESPINA, salidaPath, type SitioId, type Vec2 } from './layout';
+import { ESPINA, STUBS, salidaPath, type SitioId, type Vec2 } from './layout';
 import { simTick } from './simClock';
 import { useParkEnv } from './parkEnv';
 
@@ -40,6 +40,9 @@ export function ParkCanvas({
   selected,
   onSelect,
   resetTick,
+  pasoMode,
+  nudge,
+  onPaso,
 }: {
   playing: boolean;
   speed: number;
@@ -47,6 +50,9 @@ export function ParkCanvas({
   selected: SitioId | null;
   onSelect: (id: SitioId | null) => void;
   resetTick: number;
+  pasoMode: boolean;
+  nudge: number;
+  onPaso: (p: number) => void;
 }) {
   const env = useParkEnv();
   return (
@@ -61,7 +67,7 @@ export function ParkCanvas({
     >
       <color attach="background" args={[env.bg]} />
 
-      <SimDriver playing={playing} speed={speed} />
+      <SimDriver playing={playing || pasoMode} speed={speed} />
       <Camara />
 
       <ambientLight intensity={env.ambient} />
@@ -77,9 +83,16 @@ export function ParkCanvas({
         color={env.fill.color}
       />
 
-      <Island paths={PATHS} />
+      <Island paths={PATHS} pathsSec={STUBS} />
       <Structures selected={selected} onSelect={onSelect} labels={labels} />
-      <Flow playing={playing} speed={speed} resetTick={resetTick} />
+      <Flow
+        playing={playing}
+        speed={speed}
+        resetTick={resetTick}
+        pasoMode={pasoMode}
+        nudge={nudge}
+        onPaso={onPaso}
+      />
     </Canvas>
   );
 }

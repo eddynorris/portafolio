@@ -3,7 +3,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Billboard, Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { INK, badgeTexture, signTexture, stripeTexture } from '../../scene/toon';
-import { SITIOS, type SitioId } from './layout';
+import { ENCHUFES, SITIOS, type Enchufe, type SitioId } from './layout';
 import { ToonMat } from './Island';
 import { simTime } from './simClock';
 
@@ -96,6 +96,127 @@ function Taquilla(p: Sel) {
           />
         </mesh>
       </group>
+    </group>
+  );
+}
+
+/* ---------------- oficina: caso de uso / servicio de aplicación ---------------- */
+
+function Oficina(p: Sel) {
+  const sign = useMemo(() => signTexture('OFICINA', 'caso de uso'), []);
+  return (
+    <group position={[-5.8, 0, -1.45]} {...pick('oficina', p.onSelect)}>
+      <mesh position={[0, 0.07, 0]}>
+        <boxGeometry args={[2.9, 0.14, 2.0]} />
+        <ToonMat color="#e8c9a0" ramp={[0.6, 0.8, 1]} />
+      </mesh>
+      <mesh position={[0, 1.05, 0]}>
+        <boxGeometry args={[2.6, 1.86, 1.7]} />
+        <ToonMat color="#fff7ea" />
+        <Outlines thickness={0.045} color={INK} />
+      </mesh>
+      {/* puerta */}
+      <mesh position={[0, 0.62, 0.87]}>
+        <boxGeometry args={[0.62, 1.24, 0.08]} />
+        <meshToonMaterial color="#2a2340" />
+      </mesh>
+      <mesh position={[0, 1.28, 0.87]}>
+        <boxGeometry args={[0.76, 0.1, 0.1]} />
+        <ToonMat color="#8f6bd8" ramp={[0.6, 0.8, 1]} />
+      </mesh>
+      {/* ventanas */}
+      {[-0.82, 0.82].map((x) => (
+        <mesh key={x} position={[x, 1.28, 0.87]}>
+          <boxGeometry args={[0.52, 0.5, 0.08]} />
+          <meshToonMaterial color="#9fd7f0" />
+        </mesh>
+      ))}
+      {/* techo a cuatro aguas */}
+      <mesh position={[0, 2.28, 0]} rotation={[0, Math.PI / 4, 0]}>
+        <coneGeometry args={[2.0, 0.86, 4]} />
+        <ToonMat color="#8f6bd8" ramp={[0.55, 0.75, 1]} />
+        <Outlines thickness={0.045} color={INK} />
+      </mesh>
+      {/* cartel */}
+      <mesh position={[0, 3.15, 0.1]}>
+        <planeGeometry args={[2.0, 1.0]} />
+        <meshBasicMaterial map={sign} transparent side={THREE.DoubleSide} />
+      </mesh>
+      <mesh position={[0, 2.55, 0.1]}>
+        <boxGeometry args={[0.12, 0.6, 0.12]} />
+        <ToonMat color="#4a4363" ramp={[0.5, 0.7, 1]} />
+      </mesh>
+    </group>
+  );
+}
+
+/* ---------------- enchufes: los puertos en la frontera ---------------- */
+
+function EnchufeMalla({ e }: { e: Enchufe }) {
+  const sign = useMemo(() => signTexture(e.nombre, e.sub), [e.nombre, e.sub]);
+  const len = Math.hypot(e.hasta[0] - e.desde[0], e.hasta[1] - e.desde[1]);
+  // en local: +x a lo largo del hueco, +z hacia donde mira el puerto
+  return (
+    <group position={[e.at[0], 0, e.at[1]]} rotation={[0, e.dir > 0 ? Math.PI / 2 : 0, 0]}>
+      {[-len / 2, len / 2].map((x) => (
+        <group key={x} position={[x, 0, 0]}>
+          <mesh position={[0, 1.15, 0]}>
+            <boxGeometry args={[0.24, 2.3, 0.24]} />
+            <ToonMat color="#fff7ea" />
+            <Outlines thickness={0.04} color={INK} />
+          </mesh>
+          <mesh position={[0, 2.45, 0]}>
+            <coneGeometry args={[0.26, 0.38, 6]} />
+            <ToonMat color={e.color} ramp={[0.55, 0.75, 1]} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[0, 2.3, 0]}>
+        <boxGeometry args={[0.28, 0.28, len + 0.24]} />
+        <ToonMat color={e.color} />
+        <Outlines thickness={0.04} color={INK} />
+      </mesh>
+      {/* placa del contrato, mirando hacia fuera */}
+      <group position={[0, 1.25, 0.2]}>
+        <mesh>
+          <boxGeometry args={[0.95, 0.9, 0.14]} />
+          <ToonMat color="#fff7ea" />
+          <Outlines thickness={0.04} color={INK} />
+        </mesh>
+        <mesh position={[0, 0, 0.11]}>
+          <torusGeometry args={[0.25, 0.065, 6, 16]} />
+          <meshToonMaterial color={INK} />
+        </mesh>
+        {e.forma === 'circulo' && (
+          <mesh position={[0, 0, 0.14]}>
+            <sphereGeometry args={[0.15, 10, 8]} />
+            <meshToonMaterial color={e.color} />
+          </mesh>
+        )}
+        {e.forma === 'cuadrado' && (
+          <mesh position={[0, 0, 0.14]}>
+            <boxGeometry args={[0.24, 0.24, 0.1]} />
+            <meshToonMaterial color={e.color} />
+          </mesh>
+        )}
+        {e.forma === 'rombo' && (
+          <mesh position={[0, 0, 0.14]} rotation={[0, 0, Math.PI / 4]}>
+            <boxGeometry args={[0.24, 0.24, 0.1]} />
+            <meshToonMaterial color={e.color} />
+          </mesh>
+        )}
+        {e.forma === 'triangulo' && (
+          <mesh position={[0, 0, 0.14]} rotation={[Math.PI / 2, 0, 0]}>
+            <coneGeometry args={[0.17, 0.26, 3]} />
+            <meshToonMaterial color={e.color} />
+          </mesh>
+        )}
+      </group>
+      {/* rótulo del puerto */}
+      <mesh position={[0, 3.05, 0.08]}>
+        <planeGeometry args={[1.7, 0.85]} />
+        <meshBasicMaterial map={sign} transparent side={THREE.DoubleSide} />
+      </mesh>
     </group>
   );
 }
@@ -269,7 +390,7 @@ function Correo(p: Sel) {
     beam.current.scale.setScalar(k);
   });
   return (
-    <group position={[15.1, 0, 0.6]} {...pick('correo', p.onSelect)}>
+    <group position={[15.1, 0, 5.7]} {...pick('correo', p.onSelect)}>
       <mesh position={[0, 0.07, 0]}>
         <boxGeometry args={[2.4, 0.14, 2.4]} />
         <ToonMat color="#e8c9a0" ramp={[0.6, 0.8, 1]} />
@@ -325,7 +446,7 @@ function Antena(p: Sel) {
     if (beam.current) beam.current.scale.setScalar(1 + Math.sin(t * 4.2) * 0.22);
   });
   return (
-    <group position={[13.4, 0, 5.7]} {...pick('antena', p.onSelect)}>
+    <group position={[13.4, 0, 0.6]} {...pick('antena', p.onSelect)}>
       <mesh position={[0, 0.07, 0]}>
         <boxGeometry args={[3.0, 0.14, 3.0]} />
         <ToonMat color="#e8c9a0" ramp={[0.6, 0.8, 1]} />
@@ -468,6 +589,7 @@ export function Structures({
   return (
     <group>
       <Taquilla {...p} />
+      <Oficina {...p} />
       <Castillo {...p} />
       <Kiosco {...p} id="catalogo" color="#7ed957" />
       <Kiosco {...p} id="pedidos" color="#ffc93c" />
@@ -476,6 +598,10 @@ export function Structures({
       <Correo {...p} />
       <Antena {...p} />
       <Mástil {...p} />
+
+      {ENCHUFES.map((e) => (
+        <EnchufeMalla key={e.id} e={e} />
+      ))}
 
       {sel && <Anillo sitio={sel} />}
       {labels && SITIOS.map((s) => <Etiqueta key={s.id} sitio={s} onSelect={onSelect} />)}

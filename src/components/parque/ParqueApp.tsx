@@ -3,6 +3,7 @@ import { ParkCanvas } from './park/ParkCanvas';
 import {
   CONCEPTOS,
   CONCEPTO_POR_ID,
+  PASOS,
   SITIOS,
   SITIO_A_CONCEPTO,
   type SitioId,
@@ -46,6 +47,13 @@ const IconDown = () => (
   </svg>
 );
 
+const IconStep = () => (
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <path d="M6 5.2v13.6c0 1 1.1 1.6 2 1.1l9-6.5c.8-.5.8-1.7 0-2.2L8 4.1c-.9-.5-2 .1-2 1.1z" />
+    <rect x="17.6" y="4.6" width="2.6" height="14.8" rx="1.2" />
+  </svg>
+);
+
 const IDS_POR_CONCEPTO = CONCEPTOS.map((c) => SITIOS.find((s) => s.concepto === c.id)!.id);
 
 export default function ParqueApp() {
@@ -54,6 +62,9 @@ export default function ParqueApp() {
   const [labels, setLabels] = useState(true);
   const [selected, setSelected] = useState<SitioId | null>(null);
   const [resetTick, setResetTick] = useState(0);
+  const [pasoMode, setPasoMode] = useState(false);
+  const [nudge, setNudge] = useState(0);
+  const [paso, setPaso] = useState(0);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -68,6 +79,7 @@ export default function ParqueApp() {
   }, []);
 
   const concepto = selected ? CONCEPTO_POR_ID[SITIO_A_CONCEPTO[selected]] : null;
+  const pasoActual = PASOS[paso];
 
   return (
     <div className="pk">
@@ -80,6 +92,9 @@ export default function ParqueApp() {
             selected={selected}
             onSelect={setSelected}
             resetTick={resetTick}
+            pasoMode={pasoMode}
+            nudge={nudge}
+            onPaso={setPaso}
           />
         </div>
 
@@ -124,6 +139,28 @@ export default function ParqueApp() {
               ))}
             </div>
 
+            {pasoMode && (
+              <button
+                className="pkBtn pkBtn--next"
+                onClick={() => setNudge((n) => n + 1)}
+                title="Avanzar al siguiente paso"
+              >
+                <IconStep />
+                Siguiente
+              </button>
+            )}
+
+            <button
+              className="pkBtn"
+              onClick={() => setPasoMode((m) => !m)}
+              aria-pressed={pasoMode}
+              aria-label="Modo paso a paso"
+              title="Recorrer la ruta un paso por vez"
+            >
+              <IconStep />
+              Paso a paso
+            </button>
+
             <button
               className="pkBtn"
               onClick={() => {
@@ -150,11 +187,23 @@ export default function ParqueApp() {
               Manual
             </a>
 
-            <span className="pkState" data-on={playing} aria-live="polite">
+            <span className="pkState" data-on={playing || pasoMode} aria-live="polite">
               <i />
-              {playing ? `Flujo activo · ${speed === 0.5 ? '0,5' : speed}×` : 'Flujo en pausa'}
+              {pasoMode
+                ? `Paso a paso · ${pasoActual.n}`
+                : playing
+                  ? `Flujo activo · ${speed === 0.5 ? '0,5' : speed}×`
+                  : 'Flujo en pausa'}
             </span>
           </div>
+        </div>
+      </div>
+
+      <div className="pkPaso" aria-live="polite">
+        <span className="pkPaso__n">{pasoActual.n}</span>
+        <div>
+          <h2>{pasoActual.t}</h2>
+          <p>{pasoActual.d}</p>
         </div>
       </div>
 
@@ -175,18 +224,23 @@ export default function ParqueApp() {
             <h2>Dominio, puertos y adaptadores</h2>
             <div className="pkIntro">
               <p>
-                Los invitados son <strong>solicitudes</strong> que entran por la taquilla, se
-                procesan en el castillo y salen hacia la infraestructura. Toca un edificio —o usa
-                los botones— para ver qué concepto representa.
+                Sigue la ruta rotulada: una <strong>solicitud</strong> entra por la taquilla,
+                pasa por la oficina —el caso de uso— y termina en el castillo. La valla es el
+                hexágono y sus huecos son los puertos. Toca un edificio —o usa los botones— para
+                ver qué concepto representa.
               </p>
               <ul>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ff5a3c' }} />
-                  Entrada: quien inicia la conversación (driving)
+                  Rojo: adaptador que inicia (driving), fuera de la valla
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#14a8a8' }} />
-                  Salida: a quien la aplicación llama (driven)
+                  Verde azulado: adaptador que la app llama (driven)
+                </li>
+                <li>
+                  <span className="pkSwatch" style={{ background: '#8f6bd8' }} />
+                  Morado: caso de uso, dentro del hexágono
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ffc93c' }} />

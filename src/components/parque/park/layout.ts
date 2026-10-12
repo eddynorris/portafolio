@@ -5,6 +5,7 @@ export type Vec2 = [number, number];
 /** Sitios = objetos clicables del mundo3D. */
 export type SitioId =
   | 'taquilla'
+  | 'oficina'
   | 'castillo'
   | 'catalogo'
   | 'pedidos'
@@ -17,6 +18,7 @@ export type SitioId =
 /** Conceptos = fichas del panel de información (3 kiosks comparten uno). */
 export type ConceptoId =
   | 'entrada'
+  | 'casouso'
   | 'dominio'
   | 'contextos'
   | 'repositorio'
@@ -57,12 +59,12 @@ export type Concepto = {
 /* Caminos (x, z) — el flujo entra por la izquierda y sale por la derecha */
 /* ------------------------------------------------------------------ */
 
-/** Espina principal: taquilla → plaza del castillo → bifurcación. */
+/** Espina principal: taquilla → oficina → plaza del castillo → bifurcación. */
 export const ESPINA: Vec2[] = [
   [-16.6, 0.8],
   [-6, 0.8],
   [0, 0.8],
-  [7, 0.8],
+  [6.2, 0.8],
 ];
 
 /** Tramo de entrada (hasta la plaza). */
@@ -70,15 +72,179 @@ export const ENTRADA_PATH: Vec2[] = ESPINA.slice(0, 3);
 
 /** Ramas de salida: [desde la bifurcación hasta la puerta del edificio]. */
 export const SALIDAS: Record<'db' | 'correo' | 'api', Vec2[]> = {
-  db: [ESPINA[3], [9.8, -1.6], [12.1, -3.35]],
-  correo: [ESPINA[3], [11.5, 0.5], [15.1, 1.95]],
-  api: [ESPINA[3], [10.2, 3.4], [12.6, 5.05]],
+  db: [ESPINA[3], [7.4, -3], [12.1, -3.4]],
+  correo: [ESPINA[3], [7.4, 4.6], [10.8, 5.4], [13.9, 5.7]],
+  api: [ESPINA[3], [7.4, 0.8], [10.5, 0.7], [12.4, 0.6]],
 };
 
 /** Camino completo de salida = resto de la espina + rama. */
 export function salidaPath(k: 'db' | 'correo' | 'api'): Vec2[] {
   return [...ESPINA.slice(2), ...SALIDAS[k].slice(1)];
 }
+
+/** Empalmes cortos desde la espina hasta una puerta. */
+export const STUBS: Vec2[][] = [
+  [[-5.8, 0.8], [-5.8, -0.45]],
+  [[0, 0.8], [0, -0.55]],
+];
+
+/* ------------------------------------------------------------------ */
+/* Puertos (enchufes en la valla) y estaciones del flujo               */
+/* ------------------------------------------------------------------ */
+
+export type FormaPuerto = 'circulo' | 'cuadrado' | 'rombo' | 'triangulo';
+
+export type Enchufe = {
+  id: 'entrada' | 'repo' | 'eventos' | 'api';
+  /** extremos del hueco en la valla (misma x) */
+  desde: Vec2;
+  hasta: Vec2;
+  /** centro del hueco */
+  at: Vec2;
+  color: string;
+  forma: FormaPuerto;
+  nombre: string;
+  sub: string;
+  /** 1 = mira al este (fuera), -1 = mira al oeste */
+  dir: 1 | -1;
+};
+
+export const ENCHUFES: Enchufe[] = [
+  {
+    id: 'entrada',
+    desde: [-7.4, -1.6],
+    hasta: [-7.4, 1.6],
+    at: [-7.4, 0.8],
+    color: '#ff5a3c',
+    forma: 'circulo',
+    nombre: 'ENTRANTE',
+    sub: 'driving',
+    dir: -1,
+  },
+  {
+    id: 'repo',
+    desde: [7.4, -4],
+    hasta: [7.4, -2],
+    at: [7.4, -3],
+    color: '#14a8a8',
+    forma: 'cuadrado',
+    nombre: 'GUARDAR',
+    sub: 'driven',
+    dir: 1,
+  },
+  {
+    id: 'api',
+    desde: [7.4, -0.4],
+    hasta: [7.4, 2],
+    at: [7.4, 0.8],
+    color: '#2f9fe0',
+    forma: 'triangulo',
+    nombre: 'LLAMAR',
+    sub: 'driven',
+    dir: 1,
+  },
+  {
+    id: 'eventos',
+    desde: [7.4, 3.6],
+    hasta: [7.4, 5.6],
+    at: [7.4, 4.6],
+    color: '#ffc93c',
+    forma: 'rombo',
+    nombre: 'EVENTOS',
+    sub: 'salida',
+    dir: 1,
+  },
+];
+
+/** Estaciones del flujo canónico (x, z en el suelo). */
+export const ESTACIONES = {
+  inicio: [-15.4, 0.8] as Vec2,
+  /** el invitado espera delante de la oficina */
+  espera: [-5.8, 0.8] as Vec2,
+  oficinaPuerta: [-5.8, -0.25] as Vec2,
+  castilloPuerta: [0, -0.5] as Vec2,
+  /** reposo de cada adaptador, justo fuera de su puerto */
+  adaptRest: [-8.2, 2.6] as Vec2,
+  adaptRepo: [8.6, -4.6] as Vec2,
+  adaptApi: [8.6, 2.2] as Vec2,
+  adaptSmtp: [8.8, 6.2] as Vec2,
+};
+
+export type Vec3 = [number, number, number];
+export type Vuelo = { desde: Vec3; ctrl: Vec3; hasta: Vec3 };
+
+/** Los cinco pasos del recorrido canónico de una solicitud. */
+export const PASOS = [
+  {
+    n: '1/5',
+    t: 'Del adaptador REST al puerto entrante',
+    d: 'El JSON que llega por HTTP se traduce a un CrearPedidoCommand al cruzar el puerto.',
+  },
+  {
+    n: '2/5',
+    t: 'El caso de uso pide el agregado',
+    d: 'La oficina pregunta por el puerto de guardar y el adaptador Postgres le responde.',
+  },
+  {
+    n: '3/5',
+    t: 'El agregado valida y registra el hecho',
+    d: 'El castillo no llama a ningún puerto: valida sus invariantes y devuelve resultado y PedidoCreado.',
+  },
+  {
+    n: '4/5',
+    t: 'Guardar en la misma transacción',
+    d: 'El agregado y su evento se persisten juntos por el puerto de guardar.',
+  },
+  {
+    n: '5/5',
+    t: 'Entrega en diferido tras el commit',
+    d: 'El evento cruza el puerto de eventos y lo recibe el adaptador SMTP; otro suscriptor escucha por su puerto.',
+  },
+];
+
+/** Trazados aéreos de paquetes y eventos. */
+export const VUELOS: Record<string, Vuelo> = {
+  consultaIda: {
+    desde: [-5.8, 1.5, -0.25],
+    ctrl: [0.8, 5.2, -2.2],
+    hasta: [7.4, 1.3, -3],
+  },
+  consultaVuelta: {
+    desde: [7.4, 1.3, -3],
+    ctrl: [0.8, 5.2, -2.2],
+    hasta: [-5.8, 1.5, -0.25],
+  },
+  guardar: {
+    desde: [0, 1.5, -0.5],
+    ctrl: [4.6, 4.2, -3.4],
+    hasta: [12.1, 1.1, -3.4],
+  },
+  castilloMastil: {
+    desde: [0.6, 4.9, -1.9],
+    ctrl: [3.6, 7.6, 1.4],
+    hasta: [4.8, 3.3, 6.1],
+  },
+  mastilPuerto: {
+    desde: [4.8, 3.3, 6.1],
+    ctrl: [6.4, 4.4, 5.8],
+    hasta: [7.4, 1.4, 4.6],
+  },
+  puertoCorreo: {
+    desde: [7.4, 1.4, 4.6],
+    ctrl: [11, 3.6, 6.4],
+    hasta: [15.1, 6.6, 5.7],
+  },
+  puertoEventosApi: {
+    desde: [7.4, 1.4, 4.6],
+    ctrl: [8.4, 1.7, 2.7],
+    hasta: [7.4, 1.4, 0.8],
+  },
+  puertoApi: {
+    desde: [7.4, 1.4, 0.8],
+    ctrl: [10.4, 3.4, 1.8],
+    hasta: [13.4, 3.6, 0.6],
+  },
+};
 
 /* ------------------------------------------------------------------ */
 /* Sitios                                                             */
@@ -90,8 +256,16 @@ export const SITIOS: Sitio[] = [
     concepto: 'entrada',
     at: [-11.7, 0.4],
     ring: 3.2,
-    badge: { main: 'ENTRADA', sub: 'driving', fill: '#ff5a3c' },
-    labelAt: [-12.4, 4.4, -1.1],
+    badge: { main: 'TAQUILLA', sub: 'adaptador driving', fill: '#ff5a3c' },
+    labelAt: [-12.4, 4.6, -1.1],
+  },
+  {
+    id: 'oficina',
+    concepto: 'casouso',
+    at: [-5.8, -1.1],
+    ring: 2.4,
+    badge: { main: 'OFICINA', sub: 'caso de uso', fill: '#8f6bd8' },
+    labelAt: [-5.8, 4.7, -1.45],
   },
   {
     id: 'castillo',
@@ -136,18 +310,18 @@ export const SITIOS: Sitio[] = [
   {
     id: 'correo',
     concepto: 'correo',
-    at: [15.1, 0.6],
+    at: [15.1, 5.7],
     ring: 1.9,
     badge: { main: 'CORREO', sub: 'driven', fill: '#14a8a8' },
-    labelAt: [15.1, 7.6, 0.6],
+    labelAt: [15.1, 8.4, 5.7],
   },
   {
     id: 'antena',
     concepto: 'api',
-    at: [13.4, 5.7],
+    at: [13.4, 0.6],
     ring: 2.1,
     badge: { main: 'API', sub: 'driven', fill: '#14a8a8' },
-    labelAt: [13.4, 5.8, 5.7],
+    labelAt: [13.4, 5.9, 0.6],
   },
   {
     id: 'bus',
@@ -172,23 +346,33 @@ export const SITIO_A_CONCEPTO: Record<SitioId, ConceptoId> = SITIOS.reduce(
 export const CONCEPTOS: Concepto[] = [
   {
     id: 'entrada',
-    title: 'Puerto de entrada (driving)',
+    title: 'Adaptador de entrada (driving)',
     corto: 'Entrada',
     tag: 'Hexagonal · lado primario',
-    body: 'La taquilla es por donde entran los visitantes. El puerto de entrada define qué puede pedir la aplicación; los adaptadores primarios —REST, CLI, tests— son quienes inician la conversación.',
-    regla: 'Quien inicia la conversación = driving (primary).',
+    body: 'La taquilla es un adaptador primario: está fuera de la valla, habla HTTP o recibe órdenes de consola y traduce todo a un comando. El enchufe que hay en la valla es el puerto que la aplicación posee.',
+    regla: 'Quien inicia la conversación = driving (primary). Adaptador fuera, puerto en la frontera.',
     largo:
-      'El puerto es una interfaz que posee la aplicación, por ejemplo CrearPedidoUseCase.ejecutar(). El controlador REST, la línea de comandos o un test automático son adaptadores que hablan ese idioma y arrancan un caso de uso. Ninguno de ellos se conoce entre sí: todos llegan al mismo puerto, y la aplicación no sabe quién está al otro lado.',
+      'El puerto es una interfaz que posee la aplicación, por ejemplo CrearPedidoPuerto o PuertoEntrada.crearPedido(): solo declara qué puede pedirle el núcleo. El controlador REST, la línea de comandos o un test automático son adaptadores que hablan ese idioma y arrancan un caso de uso. Ninguno de ellos se conoce entre sí: todos llegan al mismo puerto, y la aplicación no sabe quién está al otro lado.',
+  },
+  {
+    id: 'casouso',
+    title: 'Caso de uso / servicio de aplicación',
+    corto: 'Caso de uso',
+    tag: 'Aplicación · orquesta desde dentro',
+    body: 'La oficina recibe el comando por el puerto, pide al repositorio, manda al agregado, guarda el resultado y publica el evento. Es el único que sabe el orden de esas operaciones; las tecnologías, ninguna.',
+    regla: 'El puerto es el contrato; el caso de uso es quien lo cumple y coordina.',
+    largo:
+      'A menudo se confunde el puerto con el caso de uso. El puerto solo declara qué puede pedir la aplicación; quien ejecuta la secuencia —consultar el repositorio, invocar al agregado, persistir y publicar— es el servicio de aplicación. Vive dentro del hexágono, pero fuera del núcleo: no contiene reglas de negocio, solo las aplica llamando al dominio por sus propias interfaces.',
   },
   {
     id: 'dominio',
     title: 'Núcleo del dominio',
     corto: 'Dominio',
     tag: 'DDD · donde viven las reglas',
-    body: 'El castillo no mira al exterior: aquí no hay HTTP, ni SQL, ni SMTP. Solo reglas de negocio expresadas en entidades, value objects y servicios de dominio.',
-    regla: 'El núcleo no depende del exterior: los adaptadores importan los puertos, nunca al revés.',
+    body: 'El castillo no mira al exterior: aquí no hay HTTP, ni SQL, ni SMTP. Solo reglas de negocio expresadas en entidades, value objects, agregados y servicios de dominio.',
+    regla: 'El agregado valida sus invariantes y devuelve resultado y eventos: nunca llama a un puerto.',
     largo:
-      'Los visitantes entran por la puerta y nadie rodea el castillo: así se protege el agregado (su raíz y su interior). Si mañana cambias el framework web o la base de datos, estas paredes no se mueven. Aquí también vive el lenguaje ubicuo: el código del castillo habla el mismo idioma que el negocio, sin traducciones raras.',
+      'Los visitantes entran por la puerta y nadie rodea el castillo: así se protege el agregado (su raíz y su interior). Si mañana cambias el framework web o la base de datos, estas paredes no se mueven. El agregado no sabe que existe un repositorio ni un bus: valida, cambia de estado, registra lo ocurrido y devuelve. Aquí también vive el lenguaje ubicuo: el código del castillo habla el mismo idioma que el negocio, sin traducciones raras.',
   },
   {
     id: 'contextos',
@@ -235,10 +419,10 @@ export const CONCEPTOS: Concepto[] = [
     title: 'Eventos de dominio',
     corto: 'Eventos',
     tag: 'DDD · hechos, no órdenes',
-    body: 'Cuando el castillo termina un trabajo, a veces lanza un orbe: PedidoConfirmado. Es un hecho ya ocurrido; quién lo escuche —correo, analítica, inventario— es asunto de la infraestructura.',
-    regla: 'Publicar no acopla: el dominio no sabe quién suscribe.',
+    body: 'Registrar, publicar y entregar son tres momentos distintos: el agregado registra el hecho, la transacción lo guarda y, solo después del commit, la infraestructura lo entrega a cada suscriptor por su cuenta.',
+    regla: 'Se guarda en la misma transacción que el agregado; se entrega después, en diferido.',
     largo:
-      'Los eventos de dominio no aparecen en el libro de Evans (2003): son una adición posterior y hoy forman parte del DDD táctico. Se modelan como datos inmutables, con nombre en pasado, y se publican dentro de la misma transacción del agregado que los originó.',
+      'Un evento de dominio es un dato inmutable con nombre en pasado (PedidoCreado) que describe algo ya ocurrido dentro de un contexto. Se registra mientras el agregado cambia, se persiste en la misma transacción que ese cambio y se entrega de forma asíncrona tras el commit, con cada suscriptor en su propia transacción: si el correo falla, el pedido sigue guardado. El agregado no sabe quién suscribe. No hay que confundirlo con el evento de integración: ese cruza contextos y puede llevar otro esquema y otro nombre; el de dominio solo habla el lenguaje de su propio modelo.',
   },
 ];
 
@@ -251,7 +435,7 @@ export const CONCEPTO_POR_ID = CONCEPTOS.reduce(
 /* Decoración                                                         */
 /* ------------------------------------------------------------------ */
 
-/** Valla de la aplicación: tramos [x1,z1]→[x2,z2] con huecos para los caminos. */
+/** Valla de la aplicación: tramos [x1,z1]→[x2,z2] con huecos para los puertos. */
 export const VALLAS: [Vec2, Vec2][] = [
   // norte (fondo)
   [
@@ -263,7 +447,7 @@ export const VALLAS: [Vec2, Vec2][] = [
     [-7.4, 8.4],
     [7.4, 8.4],
   ],
-  // oeste, con hueco en z=0
+  // oeste, con hueco del puerto entrante en z∈[-1.6,1.6]
   [
     [-7.4, -8.4],
     [-7.4, -1.6],
@@ -272,13 +456,21 @@ export const VALLAS: [Vec2, Vec2][] = [
     [-7.4, 1.6],
     [-7.4, 8.4],
   ],
-  // este, con hueco en z=0
+  // este, tres huecos: guardar, llamar y eventos
   [
     [7.4, -8.4],
-    [7.4, -1.6],
+    [7.4, -4],
   ],
   [
-    [7.4, 1.6],
+    [7.4, -2],
+    [7.4, -0.4],
+  ],
+  [
+    [7.4, 2],
+    [7.4, 3.6],
+  ],
+  [
+    [7.4, 5.6],
     [7.4, 8.4],
   ],
 ];
@@ -362,13 +554,3 @@ export const ARBUSTOS: Vec2[] = [
   [11.8, 8.6],
   [1.6, 7.4],
 ];
-
-/* ------------------------------------------------------------------ */
-/* Eventos de dominio: arco desde el castillo hasta el mástil          */
-/* ------------------------------------------------------------------ */
-
-export const ORBE = {
-  desde: [0.6, 4.9, -1.9] as [number, number, number],
-  ctrl: [3.6, 7.6, 1.4] as [number, number, number],
-  hasta: [4.8, 3.3, 6.1] as [number, number, number],
-};

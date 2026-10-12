@@ -266,11 +266,13 @@ function Nubes() {
  *  Vallas y estanque son opcionales: cada mundo pasa los suyos. */
 export function Island({
   paths,
+  pathsSec = [],
   vallas = VALLAS,
   vallasExtra = VALLAS_CONTEXTO,
   estanque = [-15.2, 3.6] as Vec2 | null,
 }: {
   paths: Vec2[][];
+  pathsSec?: Vec2[][];
   vallas?: [Vec2, Vec2][];
   vallasExtra?: [Vec2, Vec2][];
   estanque?: Vec2 | null;
@@ -298,6 +300,9 @@ export function Island({
       {/* caminos */}
       {paths.map((p, i) => (
         <Camino key={i} pts={p} />
+      ))}
+      {pathsSec.map((p, i) => (
+        <Camino key={`s${i}`} pts={p} w={1.05} />
       ))}
 
       {/* vallas del mundo */}
