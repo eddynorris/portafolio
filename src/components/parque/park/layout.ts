@@ -170,9 +170,6 @@ export const ESTACIONES = {
   adaptSmtp: [8.8, 6.2] as Vec2,
 };
 
-export type Vec3 = [number, number, number];
-export type Vuelo = { desde: Vec3; ctrl: Vec3; hasta: Vec3 };
-
 /** Los cinco pasos del recorrido canónico de una solicitud. */
 export const PASOS = [
   {
@@ -201,50 +198,6 @@ export const PASOS = [
     d: 'El evento cruza el puerto de eventos y lo recibe el adaptador SMTP; otro suscriptor escucha por su puerto.',
   },
 ];
-
-/** Trazados aéreos de paquetes y eventos. */
-export const VUELOS: Record<string, Vuelo> = {
-  consultaIda: {
-    desde: [-5.8, 1.5, -0.25],
-    ctrl: [0.8, 5.2, -2.2],
-    hasta: [7.4, 1.3, -3],
-  },
-  consultaVuelta: {
-    desde: [7.4, 1.3, -3],
-    ctrl: [0.8, 5.2, -2.2],
-    hasta: [-5.8, 1.5, -0.25],
-  },
-  guardar: {
-    desde: [0, 1.5, -0.5],
-    ctrl: [4.6, 4.2, -3.4],
-    hasta: [12.1, 1.1, -3.4],
-  },
-  castilloMastil: {
-    desde: [0.6, 4.9, -1.9],
-    ctrl: [3.6, 7.6, 1.4],
-    hasta: [4.8, 3.3, 6.1],
-  },
-  mastilPuerto: {
-    desde: [4.8, 3.3, 6.1],
-    ctrl: [6.4, 4.4, 5.8],
-    hasta: [7.4, 1.4, 4.6],
-  },
-  puertoCorreo: {
-    desde: [7.4, 1.4, 4.6],
-    ctrl: [11, 3.6, 6.4],
-    hasta: [15.1, 6.6, 5.7],
-  },
-  puertoEventosApi: {
-    desde: [7.4, 1.4, 4.6],
-    ctrl: [8.4, 1.7, 2.7],
-    hasta: [7.4, 1.4, 0.8],
-  },
-  puertoApi: {
-    desde: [7.4, 1.4, 0.8],
-    ctrl: [10.4, 3.4, 1.8],
-    hasta: [13.4, 3.6, 0.6],
-  },
-};
 
 /* ------------------------------------------------------------------ */
 /* Sitios                                                             */

@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import { Billboard, Outlines } from '@react-three/drei';
 import * as THREE from 'three';
 import { INK, badgeTexture, shadowTexture } from '../../scene/toon';
-import { ENCHUFES, ESTACIONES, VUELOS, type Vec2, type Vuelo } from './layout';
+import { ENCHUFES, ESTACIONES, SALIDAS, type Vec2 } from './layout';
 import { ToonMat } from './Island';
 import { simTime } from './simClock';
 
@@ -13,7 +13,7 @@ const CAMISA = ['#ff5a3c', '#14a8a8', '#ff4f9a', '#ffc93c', '#7ed957', '#2f9fe0'
 const PIEL = ['#ffd9b0', '#f2b98c', '#c98a52', '#8a5a34'];
 
 /** Duración de cada paso en segundos (a velocidad ×1). */
-const DUR = [3.2, 3, 6, 3.4, 4.6];
+const DUR = [3.2, 7.5, 6, 7.5, 8];
 
 const RUTA_CLIENTE: Vec2[] = [ESTACIONES.inicio, ESTACIONES.espera];
 const RUTA_OFICINA: Vec2[] = [
@@ -22,7 +22,30 @@ const RUTA_OFICINA: Vec2[] = [
   [0, 0.8],
   ESTACIONES.castilloPuerta,
 ];
+const RUTA_GUARDAR: Vec2[] = [
+  ESTACIONES.oficinaPuerta,
+  [-5.8, 0.8],
+  [0, 0.8],
+  ENCHUFES[1].at,
+];
+const RUTA_EVENTOS: Vec2[] = [
+  ESTACIONES.oficinaPuerta,
+  [-5.8, 0.8],
+  [0, 0.8],
+  ENCHUFES[3].at,
+];
+const RUTA_LLAMAR: Vec2[] = [
+  ESTACIONES.oficinaPuerta,
+  [-5.8, 0.8],
+  [0, 0.8],
+  ENCHUFES[2].at,
+];
 const RUTA_PASEO: Vec2[] = [ESTACIONES.inicio, [2.6, 0.8]];
+
+/** Tramos que cada adaptador recorre tras enchufarse, desde su hueco. */
+const CARRY_REPO = SALIDAS.db.slice(1);
+const CARRY_SMTP = SALIDAS.correo.slice(1);
+const CARRY_API = SALIDAS.api.slice(1);
 
 /** Adaptadores: [reposo, enchufe, camisa, piel, gorra]. */
 const ADAPT = [
@@ -56,15 +79,6 @@ function puntoEnRuta(path: Vec2[], dist: number) {
     restante -= L;
   }
   return { x: path[0][0], z: path[0][1], ang: 0 };
-}
-
-function bezier(u: number, v: Vuelo): [number, number, number] {
-  const k = 1 - u;
-  return [
-    k * k * v.desde[0] + 2 * k * u * v.ctrl[0] + u * u * v.hasta[0],
-    k * k * v.desde[1] + 2 * k * u * v.ctrl[1] + u * u * v.hasta[1],
-    k * k * v.desde[2] + 2 * k * u * v.ctrl[2] + u * u * v.hasta[2],
-  ];
 }
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
@@ -235,13 +249,13 @@ export function Flow({
 }) {
   const cliente = useRef<THREE.Group>(null!);
   const oficinero = useRef<THREE.Group>(null!);
+  const empleado = useRef<THREE.Group>(null!);
   const paquete = useRef<THREE.Group>(null!);
   const paqGiro = useRef<THREE.Group>(null!);
   const paqTag = useRef<THREE.Mesh>(null!);
   const paqueteRefs = useRef<(THREE.Group | null)[]>([]);
-  const pulso = useRef<THREE.Group>(null!);
-  const orbe = useRef<THREE.Group>(null!);
-  const orbe2 = useRef<THREE.Group>(null!);
+  const paqEvt = useRef<(THREE.Group | null)[]>([]);
+  const paqEvtGiro = useRef<(THREE.Group | null)[]>([]);
   const engranaje = useRef<THREE.Mesh>(null!);
   const adapts = useRef<(THREE.Group | null)[]>([]);
   const sparks = useRef<(THREE.Mesh | null)[]>([]);
@@ -260,6 +274,12 @@ export function Flow({
 
   const L_CLIENTE = useMemo(() => largoRuta(RUTA_CLIENTE), []);
   const L_OFICINA = useMemo(() => largoRuta(RUTA_OFICINA), []);
+  const L_GUARDAR = useMemo(() => largoRuta(RUTA_GUARDAR), []);
+  const L_EVENTOS = useMemo(() => largoRuta(RUTA_EVENTOS), []);
+  const L_LLAMAR = useMemo(() => largoRuta(RUTA_LLAMAR), []);
+  const L_CARRY_REPO = useMemo(() => largoRuta(CARRY_REPO), []);
+  const L_CARRY_SMTP = useMemo(() => largoRuta(CARRY_SMTP), []);
+  const L_CARRY_API = useMemo(() => largoRuta(CARRY_API), []);
   const L_PASEO = useMemo(() => largoRuta(RUTA_PASEO), []);
   const evtTag = useMemo(() => badgeTexture('PedidoCreado', '#ffc93c'), []);
   const etiquetas = useMemo(
@@ -325,30 +345,75 @@ export function Flow({
     /* ---- oficinero (caso de uso) ---- */
     const ofi = oficinero.current;
     if (ofi) {
+      let ruta: Vec2[] | null = null;
+      let L = 0;
+      let fIda = 0.4;
+      let fEsp = 0.5;
+      let fVta = 0.9;
       if (paso === 2) {
-        const a = 0.34;
-        const b = 0.5;
-        const c = 0.84;
+        ruta = RUTA_OFICINA;
+        L = L_OFICINA;
+        fIda = 0.34;
+        fEsp = 0.5;
+        fVta = 0.84;
+      } else if (paso === 3) {
+        ruta = RUTA_GUARDAR;
+        L = L_GUARDAR;
+        fIda = 0.4;
+        fEsp = 0.5;
+        fVta = 0.88;
+      } else if (paso === 4) {
+        ruta = RUTA_EVENTOS;
+        L = L_EVENTOS;
+        fIda = 0.38;
+        fEsp = 0.5;
+        fVta = 0.88;
+      }
+      if (ruta) {
         let d: number;
         let ida = true;
-        if (p < a) d = (p / a) * L_OFICINA;
-        else if (p < b) d = L_OFICINA;
-        else if (p < c) {
-          d = (1 - (p - b) / (c - b)) * L_OFICINA;
+        if (p < fIda) d = (p / fIda) * L;
+        else if (p < fEsp) d = L;
+        else if (p < fVta) {
+          d = (1 - (p - fEsp) / (fVta - fEsp)) * L;
           ida = false;
         } else {
           d = 0;
         }
-        const q = puntoEnRuta(RUTA_OFICINA, d);
+        const q = puntoEnRuta(ruta, d);
         ofi.position.set(q.x, 0, q.z);
         ofi.rotation.y = ida ? q.ang : q.ang + Math.PI;
         ofi.scale.setScalar(0.84);
       } else {
         ofi.position.set(ESTACIONES.oficinaPuerta[0], 0, ESTACIONES.oficinaPuerta[1]);
-        const mira =
-          paso === 1 ? Math.PI / 2 : paso === 3 ? Math.PI / 2 : Math.sin(now * 1.2) * 0.25;
+        const mira = paso === 1 ? Math.PI / 2 : Math.sin(now * 1.2) * 0.25;
         ofi.rotation.y = mira;
         ofi.scale.setScalar(0.84 + Math.sin(now * 3) * 0.012);
+      }
+    }
+
+    /* ---- segundo empleado (suscriptor por la API) ---- */
+    const emp = empleado.current;
+    if (emp) {
+      if (paso === 4) {
+        let d: number;
+        let ida = true;
+        if (p < 0.36) d = (p / 0.36) * L_LLAMAR;
+        else if (p < 0.48) d = L_LLAMAR;
+        else if (p < 0.85) {
+          d = (1 - (p - 0.48) / (0.85 - 0.48)) * L_LLAMAR;
+          ida = false;
+        } else {
+          d = 0;
+        }
+        const q = puntoEnRuta(RUTA_LLAMAR, d);
+        emp.position.set(q.x, 0, q.z);
+        emp.rotation.y = ida ? q.ang : q.ang + Math.PI;
+        emp.scale.setScalar(0.84);
+      } else {
+        emp.position.set(-6.7, 0, ESTACIONES.oficinaPuerta[1]);
+        emp.rotation.y = Math.sin(now * 1.1 + 2) * 0.3;
+        emp.scale.setScalar(0.84 + Math.sin(now * 3 + 1) * 0.012);
       }
     }
 
@@ -369,10 +434,21 @@ export function Flow({
         z = q.z + 0.2;
         forma = p < 0.7875 ? 'json' : 'comando';
       } else if (paso === 1) {
-        x = ESTACIONES.espera[0] + 0.44;
-        y = 0.5;
-        z = ESTACIONES.espera[1] + 0.2;
-        forma = 'comando';
+        if (p < 0.5) {
+          const q = puntoEnRuta(RUTA_GUARDAR, Math.min(p / 0.4, 1) * L_GUARDAR);
+          x = q.x + 0.44;
+          y = 0.5;
+          z = q.z + 0.2;
+          forma = 'comando';
+          escala = rampa(p, 0, 0.03);
+        } else {
+          const q = puntoEnRuta(RUTA_GUARDAR, (1 - (p - 0.5) / 0.4) * L_GUARDAR);
+          x = q.x + 0.44;
+          y = 0.5;
+          z = q.z + 0.2;
+          forma = 'respuesta';
+          if (p > 0.9) escala = 1 - rampa(p, 0.9, 0.98);
+        }
       } else if (paso === 2) {
         if (p < 0.34) {
           const q = puntoEnRuta(RUTA_OFICINA, (p / 0.34) * L_OFICINA);
@@ -391,19 +467,29 @@ export function Flow({
           forma = 'pedido';
         }
       } else if (paso === 3) {
-        const u = rampa(p, 0.12, 0.66);
-        const [bx, by, bz] = bezier(u, VUELOS.guardar);
-        x = bx;
-        y = by + Math.sin(now * 3) * 0.08;
-        z = bz;
-        forma = u < 0.665 ? 'pedido' : 'fila';
-        visible = p < 0.92;
+        const ad = adapts.current[1];
+        if (p < 0.46) {
+          const q = puntoEnRuta(RUTA_GUARDAR, Math.min(p / 0.4, 1) * L_GUARDAR);
+          x = q.x + 0.44;
+          y = 0.5;
+          z = q.z + 0.2;
+          forma = p < 0.42 ? 'pedido' : 'fila';
+        } else if (p < 0.86 && ad) {
+          x = ad.position.x + 0.44;
+          y = 0.5;
+          z = ad.position.z + 0.2;
+          forma = 'fila';
+        } else {
+          const fin = puntoEnRuta(CARRY_REPO, L_CARRY_REPO);
+          x = fin.x;
+          y = 0.5;
+          z = fin.z;
+          forma = 'fila';
+          escala = p < 0.86 ? 1 : 1 - rampa(p, 0.86, 0.93);
+        }
       } else {
         visible = false;
       }
-
-      if (paso === 2 && p > 0.94) escala = 1 - rampa(p, 0.94, 1);
-      if (paso === 3) escala = rampa(p, 0, 0.05) * (1 - rampa(p, 0.86, 0.92));
 
       paq.visible = visible && escala > 0.02;
       if (paq.visible) {
@@ -414,18 +500,42 @@ export function Flow({
       }
     }
 
-    /* ---- pulso de la consulta (paso 2) ---- */
-    const pu = pulso.current;
-    if (pu) {
-      const on = paso === 1 && p > 0.12 && p < 0.88;
-      pu.visible = on;
-      if (on) {
-        const [bx, by, bz] = bezier(
-          p < 0.5 ? rampa(p, 0.12, 0.5) : 1 - rampa(p, 0.5, 0.88),
-          p < 0.5 ? VUELOS.consultaIda : VUELOS.consultaVuelta,
-        );
-        pu.position.set(bx, by + Math.sin(now * 4) * 0.1, bz);
-        pu.rotation.y = now * 3;
+    /* ---- paquetes de evento (paso 5) ---- */
+    for (let i = 0; i < 2; i++) {
+      const g = paqEvt.current[i];
+      if (!g) continue;
+      let on = false;
+      let x = 0;
+      let z = 0;
+      let esc = 1;
+      const walker = i === 0 ? oficinero.current : empleado.current;
+      const ad = adapts.current[i === 0 ? 3 : 2];
+      const finPath = i === 0 ? CARRY_SMTP : CARRY_API;
+      const finL = i === 0 ? L_CARRY_SMTP : L_CARRY_API;
+      if (paso === 4) {
+        if (p < 0.44 && walker) {
+          x = walker.position.x + 0.44;
+          z = walker.position.z + 0.2;
+          on = true;
+          esc = rampa(p, 0, 0.03);
+        } else if (p < 0.84 && ad) {
+          x = ad.position.x + 0.44;
+          z = ad.position.z + 0.2;
+          on = true;
+        } else if (p < 0.9) {
+          const fin = puntoEnRuta(finPath, finL);
+          x = fin.x;
+          z = fin.z;
+          on = true;
+          esc = 1 - rampa(p, 0.84, 0.9);
+        }
+      }
+      g.visible = on && esc > 0.02;
+      if (g.visible) {
+        g.position.set(x, 0.5, z);
+        g.scale.setScalar(Math.max(0.05, esc));
+        const gi = paqEvtGiro.current[i];
+        if (gi) gi.rotation.y = now * 1.8;
       }
     }
 
@@ -442,46 +552,13 @@ export function Flow({
       }
     }
 
-    /* ---- orbes del evento (paso 5) ---- */
-    const ob = orbe.current;
-    if (ob) {
-      const on = paso === 4 && p > 0.04;
-      ob.visible = on;
-      if (on) {
-        let pos: [number, number, number];
-        if (p < 0.34) pos = bezier(rampa(p, 0.04, 0.34), VUELOS.castilloMastil);
-        else if (p < 0.56) pos = bezier(rampa(p, 0.34, 0.56), VUELOS.mastilPuerto);
-        else pos = bezier(rampa(p, 0.56, 0.92), VUELOS.puertoCorreo);
-        ob.position.set(pos[0], pos[1] + Math.sin(now * 3) * 0.1, pos[2]);
-        ob.rotation.y = now * 2;
-        const esc = Math.min(rampa(p, 0.04, 0.1), 1 - rampa(p, 0.9, 1));
-        ob.scale.setScalar(Math.max(0.05, esc));
-      }
-    }
-
-    const ob2 = orbe2.current;
-    if (ob2) {
-      const on = paso === 4 && p > 0.56 && p < 0.97;
-      ob2.visible = on;
-      if (on) {
-        const pos =
-          p < 0.72
-            ? bezier(rampa(p, 0.56, 0.72), VUELOS.puertoEventosApi)
-            : bezier(rampa(p, 0.72, 0.94), VUELOS.puertoApi);
-        ob2.position.set(pos[0], pos[1] + Math.sin(now * 3 + 1) * 0.08, pos[2]);
-        ob2.rotation.y = now * 2.4;
-        const esc = Math.min(rampa(p, 0.56, 0.62), 1 - rampa(p, 0.92, 0.97));
-        ob2.scale.setScalar(Math.max(0.05, esc));
-      }
-    }
-
-    /* ---- adaptadores: se acercan y se enchufan ---- */
+    /* ---- adaptadores: se acercan, se enchufan y llevan el paquete ---- */
     const pinches = [
       paso === 0 ? rampa(p, 0.52, 0.82) : paso === 1 ? 1 - rampa(p, 0, 0.22) : 0,
-      (      paso === 1 ? rampa(p, 0.26, 0.4) * (1 - rampa(p, 0.72, 0.86)) : 0) +
-        (paso === 3 ? rampa(p, 0.3, 0.44) * (1 - rampa(p, 0.9, 0.98)) : 0),
-      paso === 4 ? rampa(p, 0.5, 0.62) * (1 - rampa(p, 0.94, 1)) : 0,
-      paso === 4 ? rampa(p, 0.42, 0.54) * (1 - rampa(p, 0.94, 1)) : 0,
+      (paso === 1 ? rampa(p, 0.34, 0.42) * (1 - rampa(p, 0.52, 0.64)) : 0) +
+        (paso === 3 ? rampa(p, 0.36, 0.46) * (1 - rampa(p, 0.84, 0.96)) : 0),
+      paso === 4 ? rampa(p, 0.34, 0.44) * (1 - rampa(p, 0.84, 0.96)) : 0,
+      paso === 4 ? rampa(p, 0.34, 0.44) * (1 - rampa(p, 0.84, 0.96)) : 0,
     ];
 
     for (let i = 0; i < ADAPT.length; i++) {
@@ -494,10 +571,42 @@ export function Flow({
       const nx = sx - ix;
       const nz = sz - iz;
       const L = Math.hypot(nx, nz) || 1;
-      const px = sx - (nx / L) * 0.9;
-      const pz = sz - (nz / L) * 0.9;
-      g.position.set(ix + (px - ix) * t, Math.sin(now * 3 + i) * 0.015 * (1 - t), iz + (pz - iz) * t);
-      g.rotation.y = Math.atan2(px - ix, pz - iz);
+      const enHueco = i > 0;
+      const px = enHueco ? sx : sx - (nx / L) * 0.9;
+      const pz = enHueco ? sz : sz - (nz / L) * 0.9;
+      let x = ix + (px - ix) * t;
+      let z = iz + (pz - iz) * t;
+      let ang = Math.atan2(px - ix, pz - iz);
+
+      let carry: Vec2[] | null = null;
+      let carryL = 0;
+      if (i === 1 && paso === 3) {
+        carry = CARRY_REPO;
+        carryL = L_CARRY_REPO;
+      } else if (i === 2 && paso === 4) {
+        carry = CARRY_API;
+        carryL = L_CARRY_API;
+      } else if (i === 3 && paso === 4) {
+        carry = CARRY_SMTP;
+        carryL = L_CARRY_SMTP;
+      }
+      if (carry && p >= 0.46 && p < 0.96) {
+        if (p < 0.84) {
+          const q = puntoEnRuta(carry, rampa(p, 0.46, 0.84) * carryL);
+          x = q.x;
+          z = q.z;
+          ang = q.ang;
+        } else {
+          const fin = puntoEnRuta(carry, carryL);
+          const r = rampa(p, 0.84, 0.96);
+          x = fin.x + (ix - fin.x) * r;
+          z = fin.z + (iz - fin.z) * r;
+          ang = Math.atan2(ix - fin.x, iz - fin.z);
+        }
+      }
+
+      g.position.set(x, Math.sin(now * 3 + i) * 0.015 * (1 - t), z);
+      g.rotation.y = ang;
       g.scale.setScalar(0.8);
       const sp = sparks.current[i];
       if (sp) {
@@ -531,6 +640,10 @@ export function Flow({
 
       <group ref={oficinero}>
         <Persona camisa="#8f6bd8" piel="#f2b98c" gorra="#ffc93c" />
+      </group>
+
+      <group ref={empleado}>
+        <Persona camisa="#7ed957" piel="#ffd9b0" gorra="#ffc93c" />
       </group>
 
       {paseantes.map((c, i) => (
@@ -587,50 +700,38 @@ export function Flow({
         </Billboard>
       </group>
 
-      <group ref={pulso} visible={false}>
-        <mesh>
-          <sphereGeometry args={[0.17, 10, 8]} />
-          <ToonMat color="#2f9fe0" ramp={[0.6, 0.8, 1]} />
-          <Outlines thickness={0.03} color={INK} />
-        </mesh>
-        <mesh rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[0.3, 0.035, 6, 16]} />
-          <meshToonMaterial color="#9fd7f0" />
-        </mesh>
-      </group>
+      {[0, 1].map((i) => (
+        <group
+          key={`evt${i}`}
+          visible={false}
+          ref={(el) => {
+            paqEvt.current[i] = el;
+          }}
+        >
+          <group
+            ref={(el) => {
+              paqEvtGiro.current[i] = el;
+            }}
+          >
+            <mesh>
+              <boxGeometry args={[0.44, 0.4, 0.48]} />
+              <ToonMat color="#ffc93c" ramp={[0.55, 0.75, 1]} />
+              <Outlines thickness={0.04} color={INK} />
+            </mesh>
+          </group>
+          <Billboard position={[0, 0.85, 0.35]}>
+            <mesh>
+              <planeGeometry args={[2.2, 0.85]} />
+              <meshBasicMaterial map={evtTag} transparent depthWrite={false} toneMapped={false} />
+            </mesh>
+          </Billboard>
+        </group>
+      ))}
 
       <mesh ref={engranaje} rotation={[Math.PI / 2, 0, 0]} visible={false}>
         <torusGeometry args={[0.2, 0.07, 6, 12]} />
         <meshToonMaterial color="#ffc93c" />
       </mesh>
-
-      <group ref={orbe} visible={false}>
-        <mesh>
-          <octahedronGeometry args={[0.32, 0]} />
-          <ToonMat color="#ffc93c" ramp={[0.7, 0.88, 1]} />
-          <Outlines thickness={0.035} color={INK} />
-        </mesh>
-        <Billboard position={[0, 0.72, 0]}>
-          <mesh>
-            <planeGeometry args={[2.6, 1.02]} />
-            <meshBasicMaterial map={evtTag} transparent depthWrite={false} toneMapped={false} />
-          </mesh>
-        </Billboard>
-      </group>
-
-      <group ref={orbe2} visible={false}>
-        <mesh>
-          <octahedronGeometry args={[0.26, 0]} />
-          <ToonMat color="#ffc93c" ramp={[0.7, 0.88, 1]} />
-          <Outlines thickness={0.03} color={INK} />
-        </mesh>
-        <Billboard position={[0, 0.64, 0]}>
-          <mesh>
-            <planeGeometry args={[2.3, 0.9]} />
-            <meshBasicMaterial map={evtTag} transparent depthWrite={false} toneMapped={false} />
-          </mesh>
-        </Billboard>
-      </group>
     </group>
   );
 }
