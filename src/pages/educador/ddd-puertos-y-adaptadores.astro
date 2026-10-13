@@ -35,7 +35,11 @@ const equivalencias = [
   ['Puerto (contrato)', 'Interfaz en la frontera del hexágono', 'El enchufe de la valla'],
   ['Repositorio e infraestructura (SQL, SMTP, API externa)', 'Puertos salientes y adaptadores driven', 'Enchufe · bodega, antena y correo'],
   ['Contexto acotado', 'El hexágono de otro modelo', 'Las zonas cercadas'],
-  ['Evento de dominio', 'Publicación hacia un puerto de salida', 'Los orbes → enchufe → correo'],
+  [
+    'Evento de dominio → mensaje de integración (outbox)',
+    'El agregado registra; la aplicación mapea y el dispatcher publica el mensaje por un puerto de salida',
+    'El orbe → enchufe → correo y API',
+  ],
 ];
 
 const precisiones = [
@@ -44,6 +48,7 @@ const precisiones = [
   'El hexágono original no define qué hay dentro: dibuja la frontera y sus enchufes. El reparto entre aplicación y dominio llega después, con las capas de Evans (2003), la Onion Architecture de Palermo (2008) y la Clean Architecture de Martin.',
   'Domain-Driven Design es de Eric Evans (2003). Los eventos de dominio no están en ese libro: Evans los describe en 2009 (QCon London) y hoy son parte del DDD táctico.',
   'Un agregado por transacción. Entre agregados, consistencia eventual: Vernon insiste en que los eventos se guardan en la misma transacción que el cambio del agregado y se entregan después del commit, cada suscriptor con la suya.',
+  'El parque dibuja el patrón outbox duradero: el mensaje de integración se persiste en la misma transacción que el agregado y un dispatcher lo publica después del commit. Es una estrategia concreta, no una regla de que todo evento de dominio se entregue siempre en diferido; y lo que cruza hacia el correo o la API externa es el mensaje de integración derivado de PedidoCreado, no el evento de dominio tal cual.',
   '“Las dependencias apuntan hacia dentro” es la formulación canónica de Clean Architecture. En Cockburn la regla es que el interior no dependa del exterior: los adaptadores importan los puertos que define la aplicación, nunca al revés.',
 ];
 
@@ -64,6 +69,10 @@ const glosario = [
     t: 'Relaciones entre contextos',
     d: 'Tres formas de convivir: anticorruption layer traduce el lenguaje ajeno al tuyo; lenguaje publicado expones tu modelo y el otro se adapta; cliente–proveedor reparte responsabilidades por contrato.',
   },
+  {
+    t: 'Evento de dominio vs. de integración',
+    d: 'El de dominio (PedidoCreado) es un hecho del propio modelo y no sale de su contexto; el de integración (aquí PedidoCreadoIntegration) es el mensaje que sí cruza hacia otros sistemas, mapeado desde el de dominio y con su propio esquema y nombre. Aquí la aplicación lo mapea y el dispatcher lo publica tras el commit, con el patrón outbox.',
+  },
 ];
 ---
 
@@ -79,6 +88,14 @@ const glosario = [
       <div class="wrap">
         <p class="eyebrow reveal">Manual de uso</p>
         <h2 class="section-title reveal">Cómo se lee el parque</h2>
+
+        <aside class="pzScope reveal" role="note">
+          <b>Nota de alcance.</b> El escenario «CrearPedido» es didáctico: este repositorio solo
+          anima el diagrama, no ejecuta un backend real. No hay adaptadores, puertos, agregado,
+          repositorio, tabla de outbox ni dispatcher funcionando; nombres como
+          <code>PedidoCreado</code> o <code>PedidoCreadoIntegration</code> son ilustrativos. La entrega
+          animada es esquemática: no representa la lectura del outbox ni la ejecución real de los suscriptores.
+        </aside>
 
         <div class="pzLegend reveal">
           <div class="pzLegend__item">
@@ -96,18 +113,22 @@ const glosario = [
             <div>
               <h3>La oficina = el caso de uso</h3>
               <p>
-                Recibe el comando, pregunta al repositorio, manda al agregado, guarda el
-                resultado y publica el evento. El puerto es el contrato; ella es quien lo cumple.
+                Recibe el comando por el puerto, lo lleva al agregado, recoge su resultado y su
+                evento, mapea el evento a un mensaje de integración y, por el puerto de repositorio,
+                persiste el agregado y registra el mensaje en la tabla outbox dentro de la misma
+                transacción. El puerto es el contrato; ella es quien lo cumple y coordina.
               </p>
             </div>
           </div>
           <div class="pzLegend__item">
             <span class="pzDot" style="--c: var(--amarillo)"></span>
             <div>
-              <h3>Un orbe = un evento de dominio</h3>
+              <h3>El orbe cambia: evento de dominio → mensaje de integración</h3>
               <p>
-                El castillo lo registra sin salir por ningún puerto. Tras el commit, sale por el
-                puerto de eventos hacia quien quiera escucharlo.
+                El agregado lo registra sin llamar a ningún puerto. La aplicación lo mapea a un
+                mensaje de integración y registra ese mensaje en la tabla outbox mientras persiste
+                el agregado en la misma transacción; solo después del commit, un dispatcher publica
+                el mensaje hacia cada suscriptor. Así se ilustra el patrón outbox duradero.
               </p>
             </div>
           </div>
@@ -214,7 +235,7 @@ const glosario = [
     <section class="pzSec pzSec--ink">
       <div class="wrap">
         <p class="eyebrow reveal">Dudas frecuentes</p>
-        <h2 class="section-title reveal">Cuatro pares que se confunden</h2>
+        <h2 class="section-title reveal">Cinco pares que se confunden</h2>
         <div class="pzGlos">
           {
             glosario.map((g) => (
@@ -282,6 +303,25 @@ const glosario = [
 
   .pzSec--note {
     background: color-mix(in srgb, var(--amarillo) 22%, var(--cream));
+  }
+
+  .pzScope {
+    margin-top: 1.6rem;
+    background: color-mix(in srgb, var(--amarillo) 30%, var(--paper));
+    border: var(--stroke);
+    border-radius: 12px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 0.95rem 1.15rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .pzScope code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.88em;
+    background: color-mix(in srgb, var(--ink) 9%, transparent);
+    padding: 0.05rem 0.35rem;
+    border-radius: 5px;
   }
 
   /* ---------- leyenda ---------- */

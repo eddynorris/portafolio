@@ -13,7 +13,7 @@ const CAMISA = ['#ff5a3c', '#14a8a8', '#ff4f9a', '#ffc93c', '#7ed957', '#2f9fe0'
 const PIEL = ['#ffd9b0', '#f2b98c', '#c98a52', '#8a5a34'];
 
 /** Duración de cada paso en segundos (a velocidad ×1). */
-const DUR = [3.2, 7.5, 6, 7.5, 8];
+const DUR = [3.2, 4.2, 5.2, 8, 8];
 
 const RUTA_CLIENTE: Vec2[] = [ESTACIONES.inicio, ESTACIONES.espera];
 const RUTA_OFICINA: Vec2[] = [
@@ -230,7 +230,11 @@ function setForma(
   }
 }
 
-/* ---------------- flujo canónico ---------------- */
+/** Offset con el que el paquete/orbe viaja pegado a su portador. */
+const OFX = 0.44;
+const OFZ = 0.2;
+
+/* ---------------- flujo canónico CrearPedido ---------------- */
 
 export function Flow({
   playing,
@@ -250,12 +254,14 @@ export function Flow({
   const cliente = useRef<THREE.Group>(null!);
   const oficinero = useRef<THREE.Group>(null!);
   const empleado = useRef<THREE.Group>(null!);
+  const repartidor = useRef<THREE.Group>(null!);
   const paquete = useRef<THREE.Group>(null!);
   const paqGiro = useRef<THREE.Group>(null!);
   const paqTag = useRef<THREE.Mesh>(null!);
   const paqueteRefs = useRef<(THREE.Group | null)[]>([]);
   const paqEvt = useRef<(THREE.Group | null)[]>([]);
   const paqEvtGiro = useRef<(THREE.Group | null)[]>([]);
+  const paqEvtTag = useRef<(THREE.Mesh | null)[]>([]);
   const engranaje = useRef<THREE.Mesh>(null!);
   const adapts = useRef<(THREE.Group | null)[]>([]);
   const sparks = useRef<(THREE.Mesh | null)[]>([]);
@@ -281,9 +287,11 @@ export function Flow({
   const L_CARRY_SMTP = useMemo(() => largoRuta(CARRY_SMTP), []);
   const L_CARRY_API = useMemo(() => largoRuta(CARRY_API), []);
   const L_PASEO = useMemo(() => largoRuta(RUTA_PASEO), []);
-  const evtTag = useMemo(() => badgeTexture('PedidoCreado', '#ffc93c'), []);
+  const evtDomainTag = useMemo(() => badgeTexture('PedidoCreado', '#ffc93c'), []);
+  const evtOutboxTag = useMemo(() => badgeTexture('OUTBOX', '#ffc93c'), []);
+  const evtIntegrationTag = useMemo(() => badgeTexture('INTEGRACIÓN', '#ffc93c'), []);
   const etiquetas = useMemo(
-    () => FORMAS.map((n) => badgeTexture(n.toUpperCase(), '#fff7ea')),
+    () => FORMAS.map((n) => badgeTexture(n === 'fila' ? 'AGREGADO' : n.toUpperCase(), '#fff7ea')),
     [],
   );
 
@@ -325,7 +333,7 @@ export function Flow({
       onPaso(paso);
     }
 
-    /* ---- cliente ---- */
+    /* ---- cliente (la solicitud) ---- */
     const cli = cliente.current;
     if (cli) {
       if (paso === 0) {
@@ -334,7 +342,7 @@ export function Flow({
         cli.position.set(q.x, 0, q.z);
         cli.rotation.y = q.ang;
       } else {
-        s.esc = paso === 4 ? (p < 0.78 ? 1 : Math.max(0, (1 - p) / 0.22)) : 1;
+        s.esc = paso === 4 ? (p < 0.8 ? 1 : Math.max(0, (1 - p) / 0.2)) : 1;
         cli.position.set(ESTACIONES.espera[0], 0, ESTACIONES.espera[1]);
         cli.rotation.y = Math.PI / 2;
       }
@@ -342,86 +350,91 @@ export function Flow({
       cli.scale.setScalar(0.82 * s.esc);
     }
 
-    /* ---- oficinero (caso de uso) ---- */
+    /* ---- oficinero (caso de uso / servicio de aplicación) ---- */
     const ofi = oficinero.current;
     if (ofi) {
-      let ruta: Vec2[] | null = null;
-      let L = 0;
-      let fIda = 0.4;
-      let fEsp = 0.5;
-      let fVta = 0.9;
-      if (paso === 2) {
-        ruta = RUTA_OFICINA;
-        L = L_OFICINA;
-        fIda = 0.34;
-        fEsp = 0.5;
-        fVta = 0.84;
+      let d = 0;
+      let ida = true;
+      let sobreRuta = false;
+      if (paso === 1) {
+        // la aplicación lleva el comando al agregado
+        d = Math.min(p / 0.9, 1) * L_OFICINA;
+        ida = true;
+        sobreRuta = true;
+      } else if (paso === 2) {
+        // el agregado devuelve el resultado: vuelve a la oficina
+        d = (1 - Math.min(p / 0.9, 1)) * L_OFICINA;
+        ida = false;
+        sobreRuta = true;
       } else if (paso === 3) {
-        ruta = RUTA_GUARDAR;
-        L = L_GUARDAR;
-        fIda = 0.4;
-        fEsp = 0.5;
-        fVta = 0.88;
-      } else if (paso === 4) {
-        ruta = RUTA_EVENTOS;
-        L = L_EVENTOS;
-        fIda = 0.38;
-        fEsp = 0.5;
-        fVta = 0.88;
-      }
-      if (ruta) {
-        let d: number;
-        let ida = true;
-        if (p < fIda) d = (p / fIda) * L;
-        else if (p < fEsp) d = L;
-        else if (p < fVta) {
-          d = (1 - (p - fEsp) / (fVta - fEsp)) * L;
-          ida = false;
+        // la aplicación persiste el agregado y el mensaje de integración (outbox) por el puerto de guardar
+        if (p < 0.42) {
+          d = (p / 0.42) * L_GUARDAR;
+          ida = true;
+        } else if (p < 0.55) {
+          d = L_GUARDAR;
+          ida = true;
         } else {
-          d = 0;
+          d = (1 - (p - 0.55) / 0.45) * L_GUARDAR;
+          ida = false;
         }
+        sobreRuta = true;
+      }
+      if (sobreRuta) {
+        const ruta = paso === 3 ? RUTA_GUARDAR : RUTA_OFICINA;
         const q = puntoEnRuta(ruta, d);
         ofi.position.set(q.x, 0, q.z);
         ofi.rotation.y = ida ? q.ang : q.ang + Math.PI;
         ofi.scale.setScalar(0.84);
       } else {
         ofi.position.set(ESTACIONES.oficinaPuerta[0], 0, ESTACIONES.oficinaPuerta[1]);
-        const mira = paso === 1 ? Math.PI / 2 : Math.sin(now * 1.2) * 0.25;
+        const mira = paso === 0 ? Math.PI / 2 : Math.sin(now * 1.2) * 0.25;
         ofi.rotation.y = mira;
         ofi.scale.setScalar(0.84 + Math.sin(now * 3) * 0.012);
       }
     }
 
-    /* ---- segundo empleado (suscriptor por la API) ---- */
-    const emp = empleado.current;
-    if (emp) {
+    /* ---- dispatchers (outbox): publican el mensaje de integración tras el commit ---- */
+    const dispatchers = [
+      { ref: empleado, ruta: RUTA_EVENTOS, L: L_EVENTOS, idle: [-6.7, -0.25] as Vec2, f: 2 },
+      { ref: repartidor, ruta: RUTA_LLAMAR, L: L_LLAMAR, idle: [-4.9, -0.25] as Vec2, f: 1 },
+    ];
+    for (const w of dispatchers) {
+      const g = w.ref.current;
+      if (!g) continue;
       if (paso === 4) {
         let d: number;
         let ida = true;
-        if (p < 0.36) d = (p / 0.36) * L_LLAMAR;
-        else if (p < 0.48) d = L_LLAMAR;
-        else if (p < 0.85) {
-          d = (1 - (p - 0.48) / (0.85 - 0.48)) * L_LLAMAR;
+        if (p < 0.42) {
+          d = (p / 0.42) * w.L;
+          ida = true;
+        } else if (p < 0.5) {
+          d = w.L;
+          ida = true;
+        } else if (p < 0.95) {
+          d = (1 - (p - 0.5) / 0.45) * w.L;
           ida = false;
         } else {
           d = 0;
+          ida = true;
         }
-        const q = puntoEnRuta(RUTA_LLAMAR, d);
-        emp.position.set(q.x, 0, q.z);
-        emp.rotation.y = ida ? q.ang : q.ang + Math.PI;
-        emp.scale.setScalar(0.84);
+        const q = puntoEnRuta(w.ruta, d);
+        g.position.set(q.x, 0, q.z);
+        g.rotation.y = ida ? q.ang : q.ang + Math.PI;
+        g.scale.setScalar(0.84);
       } else {
-        emp.position.set(-6.7, 0, ESTACIONES.oficinaPuerta[1]);
-        emp.rotation.y = Math.sin(now * 1.1 + 2) * 0.3;
-        emp.scale.setScalar(0.84 + Math.sin(now * 3 + 1) * 0.012);
+        g.position.set(w.idle[0], 0, w.idle[1]);
+        g.rotation.y = Math.sin(now * 1.1 + w.f) * 0.3;
+        g.scale.setScalar(0.84 + Math.sin(now * 3 + w.f) * 0.012);
       }
     }
 
-    /* ---- paquete ---- */
+    /* ---- paquete principal (json → comando → pedido → fila) ---- */
     const paq = paquete.current;
     if (paq) {
+      const ofiPos = ofi ? ofi.position : null;
       let x = 0;
-      let y = 0;
+      let y = 0.5;
       let z = 0;
       let forma = 'comando';
       let visible = true;
@@ -429,63 +442,31 @@ export function Flow({
 
       if (paso === 0) {
         const q = puntoEnRuta(RUTA_CLIENTE, p * L_CLIENTE);
-        x = q.x + 0.44;
+        x = q.x + OFX;
         y = 0.5;
-        z = q.z + 0.2;
-        forma = p < 0.7875 ? 'json' : 'comando';
-      } else if (paso === 1) {
-        if (p < 0.5) {
-          const q = puntoEnRuta(RUTA_GUARDAR, Math.min(p / 0.4, 1) * L_GUARDAR);
-          x = q.x + 0.44;
-          y = 0.5;
-          z = q.z + 0.2;
-          forma = 'comando';
-          escala = rampa(p, 0, 0.03);
-        } else {
-          const q = puntoEnRuta(RUTA_GUARDAR, (1 - (p - 0.5) / 0.4) * L_GUARDAR);
-          x = q.x + 0.44;
-          y = 0.5;
-          z = q.z + 0.2;
-          forma = 'respuesta';
-          if (p > 0.9) escala = 1 - rampa(p, 0.9, 0.98);
-        }
-      } else if (paso === 2) {
-        if (p < 0.34) {
-          const q = puntoEnRuta(RUTA_OFICINA, (p / 0.34) * L_OFICINA);
-          x = q.x + 0.44;
-          y = 0.5;
-          z = q.z + 0.2;
-          forma = 'comando';
-        } else if (p < 0.5) {
-          visible = false;
-        } else {
-          const d = (1 - (p - 0.5) / 0.34) * L_OFICINA;
-          const q = puntoEnRuta(RUTA_OFICINA, d);
-          x = q.x + 0.44;
-          y = 0.5;
-          z = q.z + 0.2;
-          forma = 'pedido';
-        }
+        z = q.z + OFZ;
+        forma = p < 0.55 ? 'json' : 'comando';
+      } else if (paso === 1 && ofiPos) {
+        x = ofiPos.x + OFX;
+        z = ofiPos.z + OFZ;
+        forma = 'comando';
+      } else if (paso === 2 && ofiPos) {
+        x = ofiPos.x + OFX;
+        z = ofiPos.z + OFZ;
+        forma = p < 0.22 ? 'comando' : 'pedido';
       } else if (paso === 3) {
-        const ad = adapts.current[1];
-        if (p < 0.46) {
-          const q = puntoEnRuta(RUTA_GUARDAR, Math.min(p / 0.4, 1) * L_GUARDAR);
-          x = q.x + 0.44;
-          y = 0.5;
-          z = q.z + 0.2;
-          forma = p < 0.42 ? 'pedido' : 'fila';
-        } else if (p < 0.86 && ad) {
-          x = ad.position.x + 0.44;
-          y = 0.5;
-          z = ad.position.z + 0.2;
-          forma = 'fila';
+        if (p < 0.46 && ofiPos) {
+          x = ofiPos.x + OFX;
+          z = ofiPos.z + OFZ;
+          forma = p < 0.4 ? 'pedido' : 'fila';
         } else {
-          const fin = puntoEnRuta(CARRY_REPO, L_CARRY_REPO);
-          x = fin.x;
-          y = 0.5;
-          z = fin.z;
+          const ad = adapts.current[1];
+          if (ad) {
+            x = ad.position.x + OFX + 1.2;
+            z = ad.position.z + OFZ + 0.65;
+          }
           forma = 'fila';
-          escala = p < 0.86 ? 1 : 1 - rampa(p, 0.86, 0.93);
+          if (p > 0.9) escala = 1 - rampa(p, 0.9, 0.97);
         }
       } else {
         visible = false;
@@ -500,65 +481,128 @@ export function Flow({
       }
     }
 
-    /* ---- paquetes de evento (paso 5) ---- */
+    /* ---- orbes de evento (PedidoCreado → mensaje de integración) ---- */
+    // orb 0: el agregado registra el evento de dominio PedidoCreado; la aplicación lo mapea al
+    //        mensaje de integración (PedidoCreadoIntegration), se registra en la tabla outbox y, tras el
+    //        commit, el dispatcher lo publica hacia correo (SMTP).
+    // orb 1: entrega del mismo mensaje de integración (asíncrona) al suscriptor de la API externa.
     for (let i = 0; i < 2; i++) {
       const g = paqEvt.current[i];
       if (!g) continue;
+      const tagMaterial = paqEvtTag.current[i]?.material as THREE.MeshBasicMaterial | undefined;
+      const tagTexture = i === 0 && paso === 2 ? evtDomainTag : paso === 3 ? evtOutboxTag : evtIntegrationTag;
+      if (tagMaterial && tagMaterial.map !== tagTexture) {
+        tagMaterial.map = tagTexture;
+        tagMaterial.needsUpdate = true;
+      }
       let on = false;
       let x = 0;
       let z = 0;
       let esc = 1;
-      const walker = i === 0 ? oficinero.current : empleado.current;
-      const ad = adapts.current[i === 0 ? 3 : 2];
-      const finPath = i === 0 ? CARRY_SMTP : CARRY_API;
-      const finL = i === 0 ? L_CARRY_SMTP : L_CARRY_API;
-      if (paso === 4) {
-        if (p < 0.44 && walker) {
-          x = walker.position.x + 0.44;
-          z = walker.position.z + 0.2;
-          on = true;
-          esc = rampa(p, 0, 0.03);
-        } else if (p < 0.84 && ad) {
-          x = ad.position.x + 0.44;
-          z = ad.position.z + 0.2;
-          on = true;
-        } else if (p < 0.9) {
-          const fin = puntoEnRuta(finPath, finL);
-          x = fin.x;
-          z = fin.z;
-          on = true;
-          esc = 1 - rampa(p, 0.84, 0.9);
+
+      if (i === 0) {
+        if (paso === 2) {
+          // el agregado registra el evento de dominio y lo devuelve al caso de uso
+          if (p > 0.3) {
+            const o = oficinero.current;
+            if (o) {
+              x = o.position.x + OFX;
+              z = o.position.z + OFZ;
+              on = true;
+              esc = rampa(p, 0.3, 0.42);
+            }
+          }
+        } else if (paso === 3) {
+          // el agregado y el mensaje de integración se persisten en la misma transacción; el mensaje queda en la tabla outbox
+          if (p < 0.46) {
+            const o = oficinero.current;
+            if (o) {
+              x = o.position.x + OFX;
+              z = o.position.z + OFZ;
+              on = true;
+            }
+          } else {
+            const ad = adapts.current[1];
+            if (ad) {
+              x = ad.position.x + OFX - 1.2;
+              z = ad.position.z + OFZ - 0.65;
+              on = true;
+            }
+          }
+          if (p > 0.86) esc = 1 - rampa(p, 0.86, 0.94);
+        } else if (paso === 4) {
+          // el dispatcher publica el mensaje de integración por el puerto de eventos tras el commit
+          if (p < 0.45) {
+            const w = empleado.current;
+            if (w) {
+              x = w.position.x + OFX;
+              z = w.position.z + OFZ;
+              on = true;
+              esc = rampa(p, 0, 0.05);
+            }
+          } else {
+            const ad = adapts.current[3];
+            if (ad) {
+              x = ad.position.x + OFX;
+              z = ad.position.z + OFZ;
+              on = true;
+            }
+            esc = 1 - rampa(p, 0.8, 0.9);
+          }
+        }
+      } else {
+        if (paso === 4) {
+          // segundo suscriptor: la API externa, entrega asíncrona del mensaje de integración
+          if (p < 0.45) {
+            const w = repartidor.current;
+            if (w) {
+              x = w.position.x + OFX;
+              z = w.position.z + OFZ;
+              on = true;
+              esc = rampa(p, 0, 0.05);
+            }
+          } else {
+            const ad = adapts.current[2];
+            if (ad) {
+              x = ad.position.x + OFX;
+              z = ad.position.z + OFZ;
+              on = true;
+            }
+            esc = 1 - rampa(p, 0.78, 0.88);
+          }
         }
       }
+
       g.visible = on && esc > 0.02;
       if (g.visible) {
-        g.position.set(x, 0.5, z);
+        const deliveryOffset = paso === 4 ? (i === 0 ? 0.6 : -0.6) : 0;
+        const y = paso === 4 && i === 1 ? 1.25 : 0.72;
+        g.position.set(x, y, z + deliveryOffset);
         g.scale.setScalar(Math.max(0.05, esc));
         const gi = paqEvtGiro.current[i];
         if (gi) gi.rotation.y = now * 1.8;
       }
     }
 
-    /* ---- engranaje del agregado ---- */
+    /* ---- engranaje del agregado (valida y registra) ---- */
     const en = engranaje.current;
     if (en) {
-      const on = paso === 2 && p > 0.3 && p < 0.56;
+      const on = paso === 2 && p > 0.04 && p < 0.5;
       en.visible = on;
       if (on) {
         en.position.set(0, 2.5 + Math.sin(now * 4) * 0.08, -0.35);
         en.rotation.y = now * 5;
-        const k = 0.8 + rampa(p, 0.3, 0.38) * 0.35;
+        const k = 0.8 + rampa(p, 0.04, 0.14) * 0.35;
         en.scale.setScalar(k);
       }
     }
 
     /* ---- adaptadores: se acercan, se enchufan y llevan el paquete ---- */
     const pinches = [
-      paso === 0 ? rampa(p, 0.52, 0.82) : paso === 1 ? 1 - rampa(p, 0, 0.22) : 0,
-      (paso === 1 ? rampa(p, 0.34, 0.42) * (1 - rampa(p, 0.52, 0.64)) : 0) +
-        (paso === 3 ? rampa(p, 0.36, 0.46) * (1 - rampa(p, 0.84, 0.96)) : 0),
-      paso === 4 ? rampa(p, 0.34, 0.44) * (1 - rampa(p, 0.84, 0.96)) : 0,
-      paso === 4 ? rampa(p, 0.34, 0.44) * (1 - rampa(p, 0.84, 0.96)) : 0,
+      paso === 0 ? rampa(p, 0.5, 0.8) : paso === 1 ? 1 - rampa(p, 0, 0.18) : 0,
+      paso === 3 ? rampa(p, 0.34, 0.46) : paso === 4 ? 1 - rampa(p, 0, 0.2) : 0,
+      paso === 4 ? rampa(p, 0.24, 0.4) : paso === 0 ? 1 - rampa(p, 0, 0.18) : 0,
+      paso === 4 ? rampa(p, 0.24, 0.4) : paso === 0 ? 1 - rampa(p, 0, 0.18) : 0,
     ];
 
     for (let i = 0; i < ADAPT.length; i++) {
@@ -580,17 +624,21 @@ export function Flow({
 
       let carry: Vec2[] | null = null;
       let carryL = 0;
+      let carryEnd = 0.94;
       if (i === 1 && paso === 3) {
         carry = CARRY_REPO;
         carryL = L_CARRY_REPO;
+        carryEnd = 0.97;
       } else if (i === 2 && paso === 4) {
         carry = CARRY_API;
         carryL = L_CARRY_API;
+        carryEnd = 0.92;
       } else if (i === 3 && paso === 4) {
         carry = CARRY_SMTP;
         carryL = L_CARRY_SMTP;
+        carryEnd = 0.94;
       }
-      if (carry && p >= 0.46 && p < 0.96) {
+      if (carry && p >= 0.46 && p < carryEnd) {
         if (p < 0.84) {
           const q = puntoEnRuta(carry, rampa(p, 0.46, 0.84) * carryL);
           x = q.x;
@@ -598,7 +646,7 @@ export function Flow({
           ang = q.ang;
         } else {
           const fin = puntoEnRuta(carry, carryL);
-          const r = rampa(p, 0.84, 0.96);
+          const r = rampa(p, 0.84, carryEnd);
           x = fin.x + (ix - fin.x) * r;
           z = fin.z + (iz - fin.z) * r;
           ang = Math.atan2(ix - fin.x, iz - fin.z);
@@ -644,6 +692,10 @@ export function Flow({
 
       <group ref={empleado}>
         <Persona camisa="#7ed957" piel="#ffd9b0" gorra="#ffc93c" />
+      </group>
+
+      <group ref={repartidor}>
+        <Persona camisa="#2f9fe0" piel="#f2b98c" gorra="#ffc93c" />
       </group>
 
       {paseantes.map((c, i) => (
@@ -720,9 +772,18 @@ export function Flow({
             </mesh>
           </group>
           <Billboard position={[0, 0.85, 0.35]}>
-            <mesh>
+            <mesh
+              ref={(el) => {
+                paqEvtTag.current[i] = el;
+              }}
+            >
               <planeGeometry args={[2.2, 0.85]} />
-              <meshBasicMaterial map={evtTag} transparent depthWrite={false} toneMapped={false} />
+              <meshBasicMaterial
+                map={i === 0 ? evtDomainTag : evtIntegrationTag}
+                transparent
+                depthWrite={false}
+                toneMapped={false}
+              />
             </mesh>
           </Billboard>
         </group>

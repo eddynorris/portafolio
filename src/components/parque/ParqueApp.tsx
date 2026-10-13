@@ -224,10 +224,12 @@ export default function ParqueApp() {
             <h2>Dominio, puertos y adaptadores</h2>
             <div className="pkIntro">
               <p>
-                Sigue la ruta rotulada: una <strong>solicitud</strong> entra por la taquilla,
-                pasa por la oficina —el caso de uso— y termina en el castillo. La valla es el
-                hexágono y sus huecos son los puertos. Toca un edificio —o usa los botones— para
-                ver qué concepto representa.
+                Sigue la ruta rotulada: una <strong>solicitud</strong> entra por la taquilla, la
+                oficina —el caso de uso— lleva el comando al castillo (el agregado), recoge el
+                resultado y el evento; la aplicación persiste el agregado y registra el mensaje de
+                integración derivado en la tabla outbox, en la misma transacción. Tras el commit, un
+                dispatcher publica ese mensaje. La valla es el hexágono y sus huecos son los puertos.
+                Toca un edificio —o usa los botones— para ver qué concepto representa.
               </p>
               <ul>
                 <li>
@@ -244,7 +246,7 @@ export default function ParqueApp() {
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ffc93c' }} />
-                  Amarillo: selección y eventos de dominio
+                  Amarillo: selección y evento/mensaje del flujo
                 </li>
               </ul>
             </div>

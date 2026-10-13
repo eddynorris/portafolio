@@ -191,7 +191,7 @@ export default function MvcApp() {
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ffc93c' }} />
-                  Amarillo: el modelo calcula y devuelve el resultado
+                  Modelo (amarillo): calcula y devuelve el resultado
                 </li>
                 <li>
                   <span className="pkSwatch" style={{ background: '#ff4f9a' }} />

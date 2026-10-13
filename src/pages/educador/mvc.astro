@@ -43,8 +43,8 @@ const equivalencias = [
 const precisiones = [
   'MVC nació en la interfaz de Smalltalk-80 (Xerox PARC) y se describe en Krasner & Pope (1988). Es un patrón de interfaz de usuario, no una arquitectura de software por sí solo.',
   'El parque muestra el flujo web —a veces llamado Model 2 (término de las JSP de Sun, frente al Modelo 1)—: petición → controlador → modelo → controlador → plantilla → respuesta. En el Smalltalk clásico el camino era más circular: el modelo notifica a sus dependientes (vistas) y la vista se repinta sola.',
-  'El controlador es el hub: la petición pasa por él dos veces —al recibirla y al recibir el resultado del modelo—. La vista NO devuelve nada al controlador: su render es la respuesta que sale hacia el cliente.',
-  'El controlador no devuelve HTML ni ejecuta SQL: traduce la entrada en órdenes al modelo y, cuando hace falta, a la vista; en la web además elige qué vista se renderiza. Si empieza a hacer de negocio o de presentación, algo anda mal.',
+  'El controlador es el hub: la petición pasa por él dos veces —al recibirla y al recibir el resultado del modelo—. En cada frontera el paquete cambia de forma: petición → comando/acción (controlador → modelo) → resultado (modelo → controlador) → datos para la vista (controlador → vista) → respuesta. La vista NO devuelve su render al controlador: ese render es la respuesta que sale hacia el cliente.',
+  'En este flujo web (Model 2) el controlador no devuelve HTML ni arma la respuesta: traduce la entrada en órdenes al modelo y, cuando hace falta, entrega a la vista los datos que esta dibujará; la vista renderiza la respuesta hacia el cliente. Eso describe este flujo, no una ley universal: hay frameworks donde la acción sí devuelve un ViewResult, un Response o el propio cuerpo renderizado. Ojo además: MVC por sí solo no define la persistencia, así que “el controlador jamás toca SQL” no es una ley del patrón sino una separación de responsabilidades recomendable: conviene dejar el acceso a datos fuera del controlador, en el modelo o en un servicio. Si el controlador empieza a acumular negocio, persistencia o presentación, algo anda mal.',
   'MVC no es “tres capas”. Es un reparto de papeles entre modelo, vista y controlador, no una arquitectura por niveles: suele implementarse dentro de la capa de presentación de una app con capas, con el modelo en la capa de negocio — y a la vez puede existir MVC sin capas y capas sin MVC. La confusión es común porque muchos frameworks usan las tres palabras a la vez.',
   'En Django el patrón se llama Model–View–Template: la capa llamada “vista” asume el papel de despacho —más cercano al controlador de MVC— y la plantilla es la vista. Lee las responsabilidades, no los rótulos.',
 ];
@@ -63,6 +63,12 @@ const precisiones = [
         <p class="eyebrow reveal">Manual de uso</p>
         <h2 class="section-title reveal">Cómo se lee el parque</h2>
 
+        <aside class="pzScope reveal" role="note">
+          <b>Nota de alcance.</b> El escenario web (Model 2) es didáctico: este repositorio solo
+          anima el diagrama de MVC, no ejecuta un backend real. «GET /pedidos» es una petición de
+          ejemplo; aquí no hay una implementación MVC ejecutándose para esa ruta.
+        </aside>
+
         <div class="pzLegend reveal">
           <div class="pzLegend__item">
             <span class="pzDot" style="--c: var(--aji)"></span>
@@ -79,8 +85,9 @@ const precisiones = [
             <div>
               <h3>El controlador es el hub</h3>
               <p>
-                Frente al kiosco teal se detiene dos veces: primero recibe la petición y despacha
-                al modelo; después recibe el resultado y elige la vista.
+                Frente al kiosco teal se detiene dos veces. En la primera despacha al modelo una
+                cajita azul (el comando/acción); en la segunda recibe la cajita ámbar con el
+                resultado y le pasa a la vista una cajita teal (los datos a dibujar).
               </p>
             </div>
           </div>
@@ -100,7 +107,7 @@ const precisiones = [
               <h3>La vista renderiza y responde</h3>
               <p>
                 Última parada: la pantalla dibuja el estado. El invitado sale por el arco verde
-                con la respuesta — que va al cliente, no al controlador.
+                con la cajita verde de la respuesta — que va al cliente, no al controlador.
               </p>
             </div>
           </div>
@@ -241,6 +248,17 @@ const precisiones = [
 
   .pzSec--note {
     background: color-mix(in srgb, var(--amarillo) 22%, var(--cream));
+  }
+
+  .pzScope {
+    margin-top: 1.6rem;
+    background: color-mix(in srgb, var(--amarillo) 30%, var(--paper));
+    border: var(--stroke);
+    border-radius: 12px;
+    box-shadow: var(--shadow-hard-sm);
+    padding: 0.95rem 1.15rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
   }
 
   /* ---------- leyenda ---------- */

@@ -151,7 +151,7 @@ export const ENCHUFES: Enchufe[] = [
     color: '#ffc93c',
     forma: 'rombo',
     nombre: 'EVENTOS',
-    sub: 'salida',
+    sub: 'publicar',
     dir: 1,
   },
 ];
@@ -170,32 +170,32 @@ export const ESTACIONES = {
   adaptSmtp: [8.8, 6.2] as Vec2,
 };
 
-/** Los cinco pasos del recorrido canónico de una solicitud. */
+/** Los cinco pasos del recorrido canónico CrearPedido. */
 export const PASOS = [
   {
     n: '1/5',
-    t: 'Del adaptador REST al puerto entrante',
-    d: 'El JSON que llega por HTTP se traduce a un CrearPedidoCommand al cruzar el puerto.',
+    t: 'Entrada HTTP por el puerto entrante',
+    d: 'El adaptador REST (driving) traduce el JSON que llega por HTTP a un CrearPedidoCommand y llama al puerto entrante de la aplicación.',
   },
   {
     n: '2/5',
-    t: 'El caso de uso pide el agregado',
-    d: 'La oficina pregunta por el puerto de guardar y el adaptador Postgres le responde.',
+    t: 'La aplicación lleva el comando al agregado',
+    d: 'El caso de uso orquesta desde dentro del hexágono: entrega el comando al agregado. Aquí no hay puerto ni tecnología externa.',
   },
   {
     n: '3/5',
-    t: 'El agregado valida y registra el hecho',
-    d: 'El castillo no llama a ningún puerto: valida sus invariantes y devuelve resultado y PedidoCreado.',
+    t: 'El agregado valida, registra y devuelve',
+    d: 'El agregado aplica sus invariantes, cambia de estado y registra PedidoCreado —un evento de dominio de este mismo contexto—; devuelve resultado y evento al caso de uso sin llamar a Postgres, SMTP ni a ningún adaptador.',
   },
   {
     n: '4/5',
-    t: 'Guardar en la misma transacción',
-    d: 'El agregado y su evento se persisten juntos por el puerto de guardar.',
+    t: 'Persistencia atómica: agregado + outbox',
+    d: 'El caso de uso mapea PedidoCreado al mensaje de integración PedidoCreadoIntegration y, por el puerto de repositorio, persiste el agregado y registra el mensaje en la tabla outbox; el adaptador Postgres escribe ambos en una única transacción.',
   },
   {
     n: '5/5',
     t: 'Entrega en diferido tras el commit',
-    d: 'El evento cruza el puerto de eventos y lo recibe el adaptador SMTP; otro suscriptor escucha por su puerto.',
+    d: 'Solo después del commit, un dispatcher publica por el puerto de eventos el mensaje de integración PedidoCreadoIntegration; correo y la API externa lo reciben de forma asíncrona. El outbox es la estrategia elegida en este ejemplo, no un requisito de todo evento de dominio.',
   },
 ];
 
@@ -312,10 +312,10 @@ export const CONCEPTOS: Concepto[] = [
     title: 'Caso de uso / servicio de aplicación',
     corto: 'Caso de uso',
     tag: 'Aplicación · orquesta desde dentro',
-    body: 'La oficina recibe el comando por el puerto, pide al repositorio, manda al agregado, guarda el resultado y publica el evento. Es el único que sabe el orden de esas operaciones; las tecnologías, ninguna.',
+    body: 'La oficina recibe el comando por el puerto, lo lleva al agregado, recoge su resultado y su evento, mapea el evento a un mensaje de integración y, por el puerto de repositorio, persiste el agregado y registra el mensaje en la tabla outbox dentro de la misma transacción. Es la única que sabe el orden de esas operaciones; de la tecnología, ninguna.',
     regla: 'El puerto es el contrato; el caso de uso es quien lo cumple y coordina.',
     largo:
-      'A menudo se confunde el puerto con el caso de uso. El puerto solo declara qué puede pedir la aplicación; quien ejecuta la secuencia —consultar el repositorio, invocar al agregado, persistir y publicar— es el servicio de aplicación. Vive dentro del hexágono, pero fuera del núcleo: no contiene reglas de negocio, solo las aplica llamando al dominio por sus propias interfaces.',
+      'A menudo se confunde el puerto con el caso de uso. El puerto solo declara qué puede pedir la aplicación; quien ejecuta la secuencia —invocar al agregado, mapear su evento de dominio a un mensaje de integración, persistir el agregado y registrar el mensaje en la tabla outbox dentro de la misma transacción, y dejar que el dispatcher lo publique tras el commit— es el servicio de aplicación. Vive dentro del hexágono, pero fuera del núcleo: no contiene reglas de negocio, solo las aplica llamando al dominio por sus propias interfaces.',
   },
   {
     id: 'dominio',
@@ -345,14 +345,14 @@ export const CONCEPTOS: Concepto[] = [
     body: 'La aplicación define el puerto “guardar pedido” en términos del dominio: ni siquiera sabe que existe una base de datos. Esta bodega es el adaptador que lo implementa con SQL.',
     regla: 'Cambias Postgres por MongoDB: nace un adaptador nuevo y el castillo no se entera.',
     largo:
-      'En DDD el repositorio se declara en el dominio y se implementa en la infraestructura, y solo el agregado raíz tiene repositorio: guardar una línea de pedido por su cuenta saltaría sus reglas. En hexagonal, la interfaz del repositorio es el puerto saliente (driven port) que posee la aplicación, y su implementación es el adaptador que enchufa la tecnología.',
+      'Dónde vive el contrato del repositorio es una decisión de diseño, no una única convención: en DDD muchos lo declaran junto al dominio (Evans) y en hexagonal la interfaz es el puerto saliente (driven) que posee la aplicación, con la implementación en un adaptador. Ambas ubicaciones buscan lo mismo: que la tecnología no se filtre al núcleo. Lo que sí conviene mantener es que solo el agregado raíz tenga repositorio: guardar una línea de pedido por su cuenta saltaría sus reglas.',
   },
   {
     id: 'correo',
     title: 'Adaptador driven (SMTP)',
     corto: 'Correo',
     tag: 'Hexagonal · notificaciones',
-    body: 'Avisar al cliente es una salida: el dominio emite el hecho a través de un puerto y este adaptador lo traduce a SMTP. Si mañana cambias de mensajería, solo cambia este edificio.',
+    body: 'Avisar al cliente es una salida: tras el commit, el dispatcher publica por el puerto de eventos el mensaje de integración derivado de PedidoCreado y este adaptador lo traduce a SMTP. Si mañana cambias de mensajería, solo cambia este edificio.',
     regla: 'Quien es llamado por la aplicación = driven (secondary).',
     largo:
       'Al mismo puerto pueden enchufarse varios adaptadores: SMTP, un webhook, una cola de mensajes. El núcleo solo conoce la interfaz del puerto, jamás la tecnología que hay detrás.',
@@ -362,7 +362,7 @@ export const CONCEPTOS: Concepto[] = [
     title: 'Adaptador driven (API externa)',
     corto: 'API externa',
     tag: 'Hexagonal · integración',
-    body: 'La antena habla con servicios de terceros: pasarela de pagos, mapa, proveedor de IA. Es otro adaptador enchufado a un puerto de salida definido por la aplicación.',
+    body: 'La antena habla con servicios de terceros: pasarela de pagos, mapa, proveedor de IA. Es otro adaptador enchufado a un puerto de salida definido por la aplicación, y aquí actúa como segundo suscriptor del mismo mensaje de integración.',
     regla: 'La app no sabe que hay internet: solo llama a su puerto.',
     largo:
       'El patrón exige que la aplicación nunca nombre tecnología externa: todo lo externo le llega como parámetro por un puerto que ella misma define. Así puedes reemplazar la integración por un doble en memoria y probar el castillo completo sin red.',
@@ -372,10 +372,10 @@ export const CONCEPTOS: Concepto[] = [
     title: 'Eventos de dominio',
     corto: 'Eventos',
     tag: 'DDD · hechos, no órdenes',
-    body: 'Registrar, publicar y entregar son tres momentos distintos: el agregado registra el hecho, la transacción lo guarda y, solo después del commit, la infraestructura lo entrega a cada suscriptor por su cuenta.',
-    regla: 'Se guarda en la misma transacción que el agregado; se entrega después, en diferido.',
+    body: 'Registrar, publicar y entregar son tres momentos distintos: el agregado registra el hecho de dominio (PedidoCreado) sin llamar a ningún puerto; la aplicación lo mapea a un mensaje de integración (PedidoCreadoIntegration) y lo registra en la tabla outbox mientras persiste el agregado en la misma transacción; solo después del commit el dispatcher publica el mensaje hacia cada suscriptor.',
+    regla: 'El mensaje de outbox se persiste en la misma transacción que el agregado; el dispatcher lo publica después del commit.',
     largo:
-      'Un evento de dominio es un dato inmutable con nombre en pasado (PedidoCreado) que describe algo ya ocurrido dentro de un contexto. Se registra mientras el agregado cambia, se persiste en la misma transacción que ese cambio y se entrega de forma asíncrona tras el commit, con cada suscriptor en su propia transacción: si el correo falla, el pedido sigue guardado. El agregado no sabe quién suscribe. No hay que confundirlo con el evento de integración: ese cruza contextos y puede llevar otro esquema y otro nombre; el de dominio solo habla el lenguaje de su propio modelo.',
+      'Un evento de dominio es un dato inmutable con nombre en pasado (PedidoCreado) que describe algo ya ocurrido dentro de un contexto, y solo habla el lenguaje de su propio modelo. El agregado lo registra al cambiar de estado, sin llamar a ningún puerto ni adaptador. Para salir del contexto, la aplicación lo mapea a un mensaje de integración (aquí PedidoCreadoIntegration), con su propio esquema y nombre, y registra ese mensaje en la tabla outbox mientras persiste el cambio del agregado en la misma transacción; tras el commit, un dispatcher lo publica y cada suscriptor procesa la entrega por separado. Si el correo falla, el pedido ya confirmado no se revierte. Este parque ilustra ese patrón outbox duradero: es la estrategia concreta dibujada aquí, no una regla de que todo evento de dominio se entregue siempre de forma asíncrona. El evento de dominio en sí no cruza el contexto; lo que cruza hacia otros sistemas es el mensaje de integración derivado.',
   },
 ];
 

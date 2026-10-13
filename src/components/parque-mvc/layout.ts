@@ -121,10 +121,10 @@ export const CONCEPTOS: Concepto[] = [
     title: 'Controlador: traduce y despacha',
     corto: 'Controlador',
     tag: 'MVC · el papel de en medio',
-    body: 'Recibe la petición, le da forma, pide al modelo lo que hace falta y elige qué vista la mostrará. No guarda estado y no escribe HTML.',
+    body: 'Recibe la petición, le da forma, pide al modelo lo que hace falta y elige qué vista la mostrará. En este flujo web no guarda estado ni escribe HTML; en otros frameworks la acción puede devolver ella misma la vista o la respuesta.',
     regla: 'Controlador = traductor de entradas en acciones sobre el modelo.',
     largo:
-      'En Smalltalk-80 cada vista tenía su controlador pareja, encargado de traducir el ratón y el teclado en órdenes al modelo y/o a la vista (Burbeck, 1987). En la web (Model 2: el handler de Spring MVC, el controller de Rails) el controlador es el hub por el que pasa la petición dos veces: la recibe, ejecuta la acción en el modelo, recibe el resultado y elige la vista con esos datos — en Django ese papel lo cumple la capa llamada «vista». En ambos mundos vale la misma regla: si el controlador empieza a guardar estado o a armar HTML, el papel se le está yendo de las manos.',
+      'En Smalltalk-80 cada vista tenía su controlador pareja, encargado de traducir el ratón y el teclado en órdenes al modelo y/o a la vista (Burbeck, 1987). En la web (Model 2: el handler de Spring MVC, el controller de Rails) el controlador es el hub por el que pasa la petición dos veces: la recibe, ejecuta la acción en el modelo, recibe el resultado y elige la vista con esos datos — en Django ese papel lo cumple la capa llamada «vista». En ambos mundos el criterio es el mismo: si el controlador empieza a acumular estado, negocio o presentación, el papel se le va de las manos. Dicho esto, devolver HTML no siempre es una infracción: en varios frameworks la acción devuelve su propia vista o respuesta (un ViewResult, un Response) y sigue siendo el controlador quien despacha.',
   },
   {
     id: 'modelo',

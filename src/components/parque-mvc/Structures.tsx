@@ -250,7 +250,7 @@ function ArcoSalida() {
         <ToonMat color="#7ed957" />
         <Outlines thickness={0.04} color={INK} />
       </mesh>
-      <mesh position={[-0.22, 3.3, 0]} rotation={[0, -Math.PI / 2, 0]}>
+      <mesh position={[-0.22, 3.3, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[2.4, 1.15]} />
         <meshBasicMaterial map={signTexture('RESPUESTA', 'la vista responde al cliente')} side={THREE.DoubleSide} transparent />
       </mesh>

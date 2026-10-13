@@ -7,9 +7,12 @@ import { ToonMat } from '../parque/park/Island';
 import { simTime } from '../parque/park/simClock';
 import { PARADAS, RUTA, type Vec2 } from './layout';
 
-/** Invitado del parque MVC: una petición caminando por el flujo web completo
- *  petición → controlador → modelo → controlador (resultado) → vista → respuesta.
- *  El controlador se visita dos veces (es el hub). */
+/** Invitado del parque MVC: una petición caminando por el flujo web completo.
+ *  El paquete cambia de forma en cada límite y siempre lo lleva el invitado:
+ *  petición → controlador → comando/acción → modelo → resultado → controlador
+ *  → datos para la vista → vista → respuesta al cliente.
+ *  El controlador se visita dos veces (es el hub). La vista nunca devuelve su
+ *  render al controlador: su salida es la respuesta que va al cliente. */
 
 type Fase = 'ruta' | 'dwell' | 'die';
 
@@ -20,7 +23,7 @@ type Invitado = {
   t: number;
   dist: number;
   espera: number;
-  parada: number; // 0=controlador 1=modelo 2=vista
+  parada: number; // tramo/parada actual: 0=ida al controlador, 1=controlador→modelo, 2=modelo→controlador, 3=controlador→vista, 4=vista→cliente
   x: number;
   z: number;
   ang: number;
@@ -49,7 +52,9 @@ export function Flow({
 }) {
   const grupos = useRef<(THREE.Group | null)[]>([]);
   const cajas = useRef<(THREE.Mesh | null)[]>([]);
+  const cajasComando = useRef<(THREE.Mesh | null)[]>([]);
   const cajasResultado = useRef<(THREE.Mesh | null)[]>([]);
+  const cajasDatos = useRef<(THREE.Mesh | null)[]>([]);
   const cajasRespuesta = useRef<(THREE.Mesh | null)[]>([]);
   const engranajes = useRef<(THREE.Mesh | null)[]>([]);
   const destellos = useRef<(THREE.Mesh | null)[]>([]);
@@ -188,12 +193,18 @@ export function Flow({
       grp.rotation.z = g.fase === 'dwell' ? 0 : Math.sin(g.dist * 9) * 0.06;
       grp.scale.setScalar(0.82 * g.esc);
 
+      /* Un solo tramo visible a la vez: el paquete se transforma al cruzar
+       * cada frontera (cliente → controlador → modelo → controlador → vista → cliente). */
       const caja = cajas.current[i];
-      if (caja) caja.visible = g.parada === 0; // petición en mano (hasta el controlador)
+      if (caja) caja.visible = g.parada === 0; // petición: cliente → controlador
+      const cajaCmd = cajasComando.current[i];
+      if (cajaCmd) cajaCmd.visible = g.parada === 1; // comando/acción: controlador → modelo
       const cajaR = cajasResultado.current[i];
-      if (cajaR) cajaR.visible = g.parada === 2; // resultado del modelo, de vuelta al controlador
+      if (cajaR) cajaR.visible = g.parada === 2; // resultado: modelo → controlador
+      const cajaDatos = cajasDatos.current[i];
+      if (cajaDatos) cajaDatos.visible = g.parada === 3; // datos/modelo de presentación: controlador → vista
       const cajaResp = cajasRespuesta.current[i];
-      if (cajaResp) cajaResp.visible = g.parada === 4; // respuesta que sale hacia el cliente
+      if (cajaResp) cajaResp.visible = g.parada === 4; // respuesta HTTP: vista → cliente (la vista no vuelve al controlador)
       const eng = engranajes.current[i];
       if (eng) {
         eng.visible = g.fase === 'dwell' && g.parada === 1; // el modelo hace su lógica
@@ -237,7 +248,7 @@ export function Flow({
             <sphereGeometry args={[0.15, 10, 8]} />
             <ToonMat color="#2a2340" ramp={[0.5, 0.7, 1]} />
           </mesh>
-          {/* cajita roja = la petición */}
+          {/* cajita roja = la petición cruda (cliente → controlador) */}
           <mesh
             ref={(el) => {
               cajas.current[i] = el;
@@ -248,16 +259,40 @@ export function Flow({
             <ToonMat color="#ff5a3c" ramp={[0.55, 0.75, 1]} />
             <Outlines thickness={0.03} color={INK} />
           </mesh>
+          {/* cajita azul = el comando/acción que el controlador envía al modelo */}
+          <mesh
+            ref={(el) => {
+              cajasComando.current[i] = el;
+            }}
+            position={[0.26, 0.4, 0.12]}
+            visible={false}
+          >
+            <boxGeometry args={[0.22, 0.2, 0.26]} />
+            <ToonMat color="#2f9fe0" ramp={[0.55, 0.75, 1]} />
+            <Outlines thickness={0.03} color={INK} />
+          </mesh>
           {/* cajita ámbar = el resultado del modelo, de regreso al controlador */}
           <mesh
             ref={(el) => {
               cajasResultado.current[i] = el;
             }}
-            position={[-0.26, 0.4, 0.12]}
+            position={[0.26, 0.4, 0.12]}
             visible={false}
           >
             <boxGeometry args={[0.22, 0.2, 0.26]} />
             <ToonMat color="#ffc93c" ramp={[0.55, 0.75, 1]} />
+            <Outlines thickness={0.03} color={INK} />
+          </mesh>
+          {/* cajita teal = los datos/modelo de presentación que el controlador da a la vista */}
+          <mesh
+            ref={(el) => {
+              cajasDatos.current[i] = el;
+            }}
+            position={[0.26, 0.4, 0.12]}
+            visible={false}
+          >
+            <boxGeometry args={[0.22, 0.2, 0.26]} />
+            <ToonMat color="#14a8a8" ramp={[0.55, 0.75, 1]} />
             <Outlines thickness={0.03} color={INK} />
           </mesh>
           {/* cajita verde = la respuesta que sale hacia el cliente */}
