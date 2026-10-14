@@ -3,10 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import HeroScene from '../components/HeroScene.tsx';
 import CartPanel from '../components/CartPanel';
 import ThemeToggle from '../components/ThemeToggle.astro';
-import Proyectos from '../sections/Proyectos.astro';
-import Skills from '../sections/Skills.astro';
-import Contacto from '../sections/Contacto.astro';
-import { perfil } from '../data/portfolio';
+import { cv, perfil, whatsapp } from '../data/portfolio';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
@@ -18,8 +15,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
       {perfil.nombre}
     </a>
     <nav class="nav__links" aria-label="Principal">
-      <a href="#proyectos">Proyectos</a>
-      <a href="#skills">Skills</a>
       <span class="nav__group">
         <a class="nav__menu" href={`${base}/educador`}>Educador <i class="nav__caret" aria-hidden="true">▾</i></a>
         <span class="nav__pop">
@@ -27,10 +22,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           <a href={`${base}/educador/mvc`}>MVC: Modelo-Vista-Controlador</a>
         </span>
       </span>
-      <a href="#contacto">Contacto</a>
+      <a href={cv.href} download>CV</a>
     </nav>
     <ThemeToggle />
-    <a class="btn btn--small" href="#contacto">Hablemos</a>
+    <a
+      class="btn btn--small"
+      href={`${whatsapp.href}?text=${encodeURIComponent('Hola Eddy, te escribo desde tu portafolio.')}`}
+      target="_blank"
+      rel="noreferrer"
+      >Hablemos</a
+    >
   </header>
 
   <main id="top">
@@ -50,16 +51,24 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         </h1>
         <p class="hero__lead">
           Soy {perfil.nombre}, <strong>{perfil.rol}</strong> en {perfil.ciudad}.
-          Python y Flask por detrás, agentes de IA para acelerar, y una escena 3D que corre a
-          60&nbsp;fps.
+          Angular y Flask por detrás, React Native en el móvil, agentes de IA para acelerar, y
+          una escena 3D que corre a 60&nbsp;fps.
         </p>
         <div class="hero__cta">
-          <a class="btn" href="#proyectos">Ver proyectos <span aria-hidden="true">↓</span></a>
-          <a class="btn btn--ghost" href="#contacto">Escríbeme</a>
+          <a class="btn" href={cv.href} download>
+            Descargar CV <span aria-hidden="true">↓</span>
+          </a>
+          <a
+            class="btn btn--ghost"
+            href={`${whatsapp.href}?text=${encodeURIComponent('Hola Eddy, te escribo desde tu portafolio.')}`}
+            target="_blank"
+            rel="noreferrer"
+            >Escríbeme</a
+          >
         </div>
         <p class="hero__touch">
           <span class="hero__touchDot" aria-hidden="true"></span>
-          Toca el letrero, el menú o la sombrilla del carrito
+          Proyectos, skills y contacto: toca el letrero, el menú o la sombrilla del carrito
         </p>
       </div>
 
@@ -79,16 +88,16 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
           Array.from({ length: 2 }).map(() => (
             <span class="marquee__row">
               {[
-                'AGENTES DE IA',
+                'ANGULAR',
                 'PYTHON & FLASK',
-                'COMFYUI',
-                'SUPABASE',
-                'WEBGL',
-                'BOTS DE TELEGRAM',
-                'VIDEO GENERATIVO',
-                'ASTRO',
+                'REACT NATIVE',
                 'REST APIs',
-                'CEL-SHADING',
+                'DESPLIEGUE CLOUD',
+                'AWS · RAILWAY · VERCEL',
+                'AGENTES DE IA',
+                'CURSOR',
+                'CLAUDE CODE',
+                'OPENCODE',
               ].map((w) => (
                 <b>
                   {w} <i>✦</i>
@@ -99,15 +108,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
         }
       </div>
     </div>
-
-    <Proyectos />
-    <Skills />
-    <Contacto />
   </main>
 
   <CartPanel client:only="react" />
 
-  <footer class="foot">
+  <footer class="foot" id="contacto">
     <div class="wrap foot__inner">
       <p>© {new Date().getFullYear()} {perfil.nombre}. Ceviche recién hecho.</p>
       <p class="foot__meta">Astro + React Three Fiber · sin frameworks pesados</p>

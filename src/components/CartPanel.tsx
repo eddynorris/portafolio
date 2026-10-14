@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { enlaces, proyectos, skills, whatsapp } from '../data/portfolio';
+import { cv, enlaces, proyectos, skills, whatsapp } from '../data/portfolio';
 import { getFocus, setFocus, subscribe, type HotspotId } from './scene/store';
 import '../styles/cart-panel.css';
 
@@ -12,7 +12,7 @@ const META: Record<HotspotId, { eyebrow: string; title: string; sub: string }> =
   skills: {
     eyebrow: 'Menú del carrito',
     title: 'Skills',
-    sub: 'El menú de hoy: con qué trabajo a diario.',
+    sub: 'El menú de hoy: qué sé hacer, dónde me formé y qué tengo certificado.',
   },
   redes: {
     eyebrow: 'Bajo la sombrilla',
@@ -138,6 +138,9 @@ export default function CartPanel() {
                   </li>
                 ))}
               </ul>
+              <a className="btn cpWpp" href={cv.href} download>
+                Descargar CV (PDF) <span aria-hidden="true">↓</span>
+              </a>
               <a
                 className="btn cpWpp"
                 href={`${whatsapp.href}?text=${encodeURIComponent('Hola Eddy, te escribo desde tu portafolio.')}`}
