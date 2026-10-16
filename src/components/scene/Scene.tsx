@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import type * as THREE from 'three';
 import { CameraRig } from './CameraRig';
@@ -80,6 +80,20 @@ const PostFX = lazy(async () => {
   return { default: FX };
 });
 
+/** Si el PostFX revienta (GPU/ANGLE viejo), la escena sigue sin bloom. */
+class FxBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(err: unknown) {
+    console.warn('[hero] PostFX deshabilitado tras un error:', err);
+  }
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
 function BloomGate() {
   const width = useThree((s) => s.size.width);
   const reduced = prefersReduced();
@@ -97,11 +111,15 @@ function BloomGate() {
   }, [reduced, width]);
   if (!on) return null;
   return (
-    <Suspense fallback={null}>
-      <PostFX />
-    </Suspense>
+    <FxBoundary>
+      <Suspense fallback={null}>
+        <PostFX />
+      </Suspense>
+    </FxBoundary>
   );
 }
+
+export const HERO_WEBGL_LOST = 'hero:webgl-lost';
 
 export function Scene() {
   const theme = useTheme();
@@ -111,7 +129,7 @@ export function Scene() {
     <Canvas
       flat
       dpr={[1, 2]}
-      gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, alpha: false }}
       camera={{ fov: 36, near: 0.1, far: 300, position: [4, 11, 26] }}
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl, scene }) => {
@@ -119,6 +137,12 @@ export function Scene() {
           (window as unknown as Record<string, unknown>).__heroGL = gl;
           (window as unknown as Record<string, unknown>).__heroScene = scene;
         }
+        // GPU/driver puede perder el contexto (crash, ahorro de energía).
+        // Avisamos para caer al héroe estático en vez de dejar un hueco.
+        gl.domElement.addEventListener('webglcontextlost', (e) => {
+          e.preventDefault();
+          window.dispatchEvent(new Event(HERO_WEBGL_LOST));
+        });
       }}
     >
       <SceneThemeCtx.Provider value={cfg}>

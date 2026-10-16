@@ -47,8 +47,9 @@ function prefixName(o: THREE.Object3D) {
 
 /**
  * Instancia un GLB: clona materiales (para no tocar la caché de drei),
- * cablea nodos `interact_*` (clics) y gestiona `emissive_*` (se encienden
- * de noche). El crossfade se controla con `opacity` (0..1).
+ * cablea nodos interactivos (`interact_*` o nombres listados en `cfg.hotspots`)
+ * y gestiona `emissive_*` (se encienden de noche). El crossfade se controla
+ * con `opacity` (0..1).
  */
 function GlbModel({
   url,
@@ -62,7 +63,7 @@ function GlbModel({
   offset: number;
   /** objetivo de opacidad 0..1 (crossfade); se interpola en useFrame. */
   opacity: { current: number; target: number };
-  registerNodes?: (nodes: Map<HotspotId, THREE.Object3D>) => void;
+  registerNodes?: (nodes: Map<HotspotId, THREE.Object3D[]>) => void;
 }) {
   const gltf = useGLTF(url);
 
@@ -70,7 +71,7 @@ function GlbModel({
     const root = gltf.scene.clone(true);
     const mats: THREE.MeshStandardMaterial[] = [];
     const emissive: { mesh: THREE.Mesh; base: THREE.Color; baseI: number }[] = [];
-    const interact = new Map<HotspotId, THREE.Object3D>();
+    const interact = new Map<HotspotId, THREE.Object3D[]>();
 
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
@@ -92,11 +93,15 @@ function GlbModel({
       }
 
       const name = prefixName(o);
-      if (name.startsWith('interact_')) {
-        const suffix = name.slice('interact_'.length) as HotspotId;
-        const id = cfg.hotspots?.[name] ?? cfg.hotspots?.[suffix] ?? suffix;
-        if (KNOWN.has(id)) interact.set(id, o);
-        else console.warn(`[hero] nodo ${name} no mapea a un hotspot conocido`);
+      const isInteract = name.startsWith('interact_');
+      const suffix = isInteract ? (name.slice('interact_'.length) as HotspotId) : null;
+      const id = cfg.hotspots?.[name] ?? (suffix ? (cfg.hotspots?.[suffix] ?? suffix) : null);
+      if (id && KNOWN.has(id)) {
+        const bucket = interact.get(id);
+        if (bucket) bucket.push(o);
+        else interact.set(id, [o]);
+      } else if (isInteract) {
+        console.warn(`[hero] nodo ${name} no mapea a un hotspot conocido`);
       }
     });
 
@@ -140,11 +145,16 @@ function GlbModel({
 /*  Picking manual para nodos interact_* del GLB                       */
 /* ------------------------------------------------------------------ */
 
-function GlbPicker({ nodes, offset }: { nodes: Map<HotspotId, THREE.Object3D>; offset: number }) {
+function GlbPicker({
+  nodes,
+  offset,
+}: {
+  nodes: Map<HotspotId, THREE.Object3D[]>;
+  offset: number;
+}) {
   const gl = useThree((s) => s.gl);
   const raycaster = useThree((s) => s.raycaster);
   const camera = useThree((s) => s.camera);
-  const [hover, setHover] = useState<HotspotId | null>(null);
 
   useEffect(() => {
     const el = gl.domElement;
@@ -155,15 +165,16 @@ function GlbPicker({ nodes, offset }: { nodes: Map<HotspotId, THREE.Object3D>; o
       const x = ((cx - rect.left) / rect.width) * 2 - 1;
       const y = -((cy - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
-      for (const [id, obj] of nodes) {
-        if (raycaster.intersectObject(obj, true).length) return { id, obj };
+      for (const [id, objs] of nodes) {
+        for (const obj of objs) {
+          if (raycaster.intersectObject(obj, true).length) return { id, obj };
+        }
       }
       return null;
     };
 
     const onMove = (e: PointerEvent) => {
       const hit = pick(e.clientX, e.clientY);
-      setHover(hit?.id ?? null);
       document.body.style.cursor = hit ? 'pointer' : '';
     };
     const onDown = (e: PointerEvent) => {
@@ -176,7 +187,6 @@ function GlbPicker({ nodes, offset }: { nodes: Map<HotspotId, THREE.Object3D>; o
       setFocus({ id: hit.id, anchor, offset: world.clone().sub(anchor.getWorldPosition(new THREE.Vector3())), dir, fit: FIT[hit.id] });
     };
     const onLeave = () => {
-      setHover(null);
       document.body.style.cursor = '';
     };
 
@@ -190,14 +200,6 @@ function GlbPicker({ nodes, offset }: { nodes: Map<HotspotId, THREE.Object3D>; o
       document.body.style.cursor = '';
     };
   }, [nodes, gl, raycaster, camera, offset]);
-
-  // realce sencillo al pasar el puntero
-  useFrame(() => {
-    for (const [id, obj] of nodes) {
-      const s = hover === id ? 1.06 : 1;
-      obj.scale.lerp(new THREE.Vector3(s, s, s), 0.2);
-    }
-  });
 
   return null;
 }
@@ -247,7 +249,7 @@ export function ModelHost({ offset = 0 }: { offset?: number }) {
   }, [desiredUrl, currentUrl]);
 
   // recolecta nodos interact_* del modelo activo (el último)
-  const [nodes, setNodes] = useState<Map<HotspotId, THREE.Object3D>>(new Map());
+  const [nodes, setNodes] = useState<Map<HotspotId, THREE.Object3D[]>>(new Map());
   const activeKey = live.length ? live[live.length - 1].key : -1;
 
   return (

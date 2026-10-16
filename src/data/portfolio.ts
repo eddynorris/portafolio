@@ -70,7 +70,7 @@ export const proyectos: Proyecto[] = [
 export const skills = [
   {
     grupo: 'Desarrollo Full-Stack',
-    items: ['Angular', 'Flask (Python)', 'APIs REST', 'React Native'],
+    items: ['Angular', 'APIs con Flask (Python)', 'React Native'],
   },
   {
     grupo: 'Despliegue en la nube',
@@ -95,11 +95,11 @@ export const skills = [
     grupo: 'Certificados',
     items: [
       'Data Structures & Backend with Java — Board Infinity',
-      'AI Fundamentals — IBM',
+      'Artificial Intelligence Fundamentals — IBM',
       'Agile Explorer — IBM',
       'Foundations: Data, Data, Everywhere — Google',
       'Programación de Aplicaciones en Tiempo Real — CODIDEEP',
-      'Marketing Digital & Social Media — Google',
+      'Plataformas de Marketing Digital & Social Media Business — Google',
     ],
   },
 ];

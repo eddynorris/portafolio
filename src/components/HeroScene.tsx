@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Scene } from './scene/Scene';
+import { Component, useEffect, useState, type ReactNode } from 'react';
+import { HERO_WEBGL_LOST, Scene } from './scene/Scene';
 
 function hasWebGL(): boolean {
   try {
@@ -39,6 +39,20 @@ function HeroStatic() {
   );
 }
 
+/** Si la escena 3D revienta en render, mostramos el héroe estático en vez de un hueco. */
+class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch(err: unknown) {
+    console.warn('[hero] la escena 3D falló, uso el héroe estático:', err);
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
 export default function HeroScene() {
   const [mode, setMode] = useState<'scene' | 'static' | null>(null);
 
@@ -47,8 +61,16 @@ export default function HeroScene() {
       typeof window.matchMedia === 'function' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     setMode(reduced || !hasWebGL() ? 'static' : 'scene');
+    const onLost = () => setMode('static');
+    window.addEventListener(HERO_WEBGL_LOST, onLost);
+    return () => window.removeEventListener(HERO_WEBGL_LOST, onLost);
   }, []);
 
   if (mode === null) return null; // resolvemos tras hidratar (evita SSR/cliente mismatch)
-  return mode === 'static' ? <HeroStatic /> : <Scene />;
+  if (mode === 'static') return <HeroStatic />;
+  return (
+    <SceneBoundary fallback={<HeroStatic />}>
+      <Scene />
+    </SceneBoundary>
+  );
 }

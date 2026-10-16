@@ -38,7 +38,7 @@ export type SceneThemeCfg = {
   /** Bandas cel: se reajustan de noche para no aplastar las sombras. */
   toon: { main: number[]; soft: number[] };
   bloom: { intensity: number; threshold: number };
-  /** Override opcional: mapea nombre de nodo `interact_X` a un hotspot concreto. */
+  /** Mapea nombres de nodo (arbitrarios o `interact_X`) a un hotspot concreto. */
   hotspots?: Record<string, HotspotId>;
 };
 
@@ -46,9 +46,29 @@ export type SceneThemeCfg = {
 /*  Config por tema                                                    */
 /* ------------------------------------------------------------------ */
 
+/** Nodos del GLB del carrito mapeados a hotspots (el GLB no trae `interact_*`). */
+const CART_HOTSPOTS: Record<string, HotspotId> = {
+  letrero_madera: 'proyectos',
+  letrero_tex: 'proyectos',
+  banner_caja: 'skills',
+  banner_tex: 'skills',
+  toldo_frente: 'redes',
+  toldo_atras: 'redes',
+  toldo_izq: 'redes',
+  toldo_der: 'redes',
+  toldo_techo_cumbrera: 'redes',
+  toldo_interior: 'redes',
+};
+
 /** Luz = valores actuales del hero (sin regresión visual). */
 const LIGHT: SceneThemeCfg = {
-  model: { src: null, scale: 1, position: [0, 0, 0], rotation: [0, 0, 0] },
+  model: {
+    src: 'models/Ceviche_Tidehunter_Carrito.glb',
+    scale: 1,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+  },
+  hotspots: CART_HOTSPOTS,
   sky: { top: '#2f9fe0', mid: '#8fdcff', bottom: '#ffe9c9', sun: 1 },
   fog: null,
   lights: {
@@ -71,7 +91,13 @@ const LIGHT: SceneThemeCfg = {
 
 /** Noche: cielo frío, luz direccional tenue, emisión al alza, bandas cel levantadas. */
 const NIGHT: SceneThemeCfg = {
-  model: { src: null, scale: 1, position: [0, 0, 0], rotation: [0, 0, 0] },
+  model: {
+    src: 'models/Ceviche_Tidehunter_Carrito.glb',
+    scale: 1,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+  },
+  hotspots: CART_HOTSPOTS,
   sky: { top: '#05060f', mid: '#0d1b33', bottom: '#1a2b4a', sun: 0.16 },
   fog: { color: '#0a1424', near: 22, far: 70 },
   lights: {
