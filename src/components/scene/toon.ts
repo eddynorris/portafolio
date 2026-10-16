@@ -46,6 +46,20 @@ function memo(key: string, make: () => THREE.Texture) {
   return t;
 }
 
+/**
+ * Familia real de una fuente del sitio. Con Astro Fonts la familia lleva hash
+ * (`--font-display` apunta a ella), así que la resolvemos vía CSS en vez de
+ * escribir el nombre a mano.
+ */
+function cssFont(varName: string, fallback: string): string {
+  if (typeof document === 'undefined') return fallback;
+  const v = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+  return v || fallback;
+}
+
+const displayFont = () => cssFont('--font-display', '"Bricolage Grotesque", Impact, sans-serif');
+const bodyFont = () => cssFont('--font-body', '"DM Sans", Arial, sans-serif');
+
 /** Letrero pintado a mano, dibujado en canvas. */
 export function signTexture(main: string, sub = '') {
   return memo(`sign:${main}:${sub}`, () => {
@@ -59,14 +73,14 @@ export function signTexture(main: string, sub = '') {
     g.strokeRect(26, 26, 1024 - 52, 512 - 52);
 
     g.fillStyle = '#ff5a3c';
-    g.font = '900 168px "Bricolage Grotesque", Impact, sans-serif';
+    g.font = `900 168px ${displayFont()}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillText(main, 512, sub ? 226 : 256);
 
     if (sub) {
       g.fillStyle = INK;
-      g.font = '700 74px "DM Sans", Arial, sans-serif';
+      g.font = `700 74px ${bodyFont()}`;
       g.fillText(sub, 512, 372);
     }
 
@@ -94,12 +108,12 @@ export function menuTexture(lines: string[]) {
     g.strokeRect(22, 22, 512 - 44, 640 - 44);
 
     g.fillStyle = '#ffc93c';
-    g.font = '800 78px "Bricolage Grotesque", Impact, sans-serif';
+    g.font = `800 78px ${displayFont()}`;
     g.textAlign = 'center';
     g.fillText('MENÚ', 256, 118);
 
     g.textAlign = 'left';
-    g.font = '500 52px "DM Sans", Arial, sans-serif';
+    g.font = `500 52px ${bodyFont()}`;
     lines.forEach((l, i) => {
       g.fillStyle = i % 2 ? '#7ed957' : '#fff7ea';
       g.fillText(l, 62, 214 + i * 92);
@@ -179,7 +193,7 @@ export function badgeTexture(label: string, fill = '#ffc93c') {
     const c = makeCanvas(W, H);
     const g = c.getContext('2d')!;
 
-    g.font = '900 92px "Bricolage Grotesque", Impact, sans-serif';
+    g.font = `900 92px ${displayFont()}`;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     const w = Math.min(W - 48, g.measureText(label).width + 92);

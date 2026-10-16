@@ -55,10 +55,22 @@ const temas = [
       <span class="nav__crumb" aria-current="page">Educador</span>
     </nav>
     <ThemeToggle />
+    <details class="nav__burger">
+      <summary aria-label="Abrir menú">
+        <span class="nav__burgerLines" aria-hidden="true"><i></i><i></i><i></i></span>
+      </summary>
+      <nav class="nav__burgerPanel" aria-label="Menú">
+        <a href={`${base}/`}>Portada</a>
+        <a href={`${base}/educador`} aria-current="page">Educador</a>
+        <a href={`${base}/educador/ddd-puertos-y-adaptadores`}>DDD, Puertos y Adaptadores</a>
+        <a href={`${base}/educador/mvc`}>MVC: Modelo-Vista-Controlador</a>
+        <a href={`${base}/educador/capas`}>Arquitectura por capas</a>
+      </nav>
+    </details>
     <a class="btn btn--small" href={`${base}/#contacto`}>Hablemos</a>
   </header>
 
-  <main>
+  <main id="main">
     <section class="eduHero">
       <div class="wrap">
         <p class="eyebrow reveal">Portada / Educador</p>
@@ -248,6 +260,105 @@ const temas = [
 
   @media (max-width: 720px) {
     .nav__links {
+      display: none;
+    }
+  }
+  .nav__burger {
+    display: none;
+    position: relative;
+  }
+  .nav__burger summary {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
+    min-height: 44px;
+    border: var(--stroke);
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: var(--shadow-hard-sm);
+    cursor: pointer;
+    list-style: none;
+    transition:
+      transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.18s ease;
+  }
+  .nav__burger summary::-webkit-details-marker {
+    display: none;
+  }
+  .nav__burger summary:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+  .nav__burger summary:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+  .nav__burgerLines {
+    display: grid;
+    gap: 4px;
+    width: 18px;
+  }
+  .nav__burgerLines i {
+    height: 2px;
+    background: var(--ink);
+    border-radius: 2px;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .nav__burger[open] .nav__burgerLines i:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+  .nav__burger[open] .nav__burgerLines i:nth-child(2) {
+    transform: scaleX(0);
+  }
+  .nav__burger[open] .nav__burgerLines i:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+  .nav__burgerPanel {
+    position: absolute;
+    top: calc(100% + 0.65rem);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    min-width: 15rem;
+    padding: 0.45rem;
+    background: var(--paper);
+    border: var(--stroke);
+    border-radius: 12px;
+    box-shadow: var(--shadow-hard-sm);
+  }
+  .nav__burgerPanel a {
+    padding: 0.6rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .nav__burgerPanel a:hover {
+    background: color-mix(in srgb, var(--amarillo) 40%, transparent);
+  }
+  .nav__burgerPanel a[aria-current='page'] {
+    font-weight: 700;
+    color: var(--aji);
+  }
+  @media (max-width: 720px) {
+    .nav :global(.themeToggle) {
+      margin-left: auto;
+    }
+    .nav__burger {
+      display: block;
+      margin-left: 0;
+    }
+    .nav__brand {
+      font-size: 0.98rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      min-width: 0;
+    }
+  }
+  @media (max-width: 480px) {
+    .nav .btn--small {
       display: none;
     }
   }
