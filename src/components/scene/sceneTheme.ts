@@ -38,6 +38,8 @@ export type SceneThemeCfg = {
   /** Bandas cel: se reajustan de noche para no aplastar las sombras. */
   toon: { main: number[]; soft: number[] };
   bloom: { intensity: number; threshold: number };
+  /** Sombra de contacto bajo el carrito (estilo diorama). */
+  contactShadow: { color: string; opacity: number };
   /** Mapea nombres de nodo (arbitrarios o `interact_X`) a un hotspot concreto. */
   hotspots?: Record<string, HotspotId>;
 };
@@ -87,6 +89,7 @@ const LIGHT: SceneThemeCfg = {
   emissionMultiplier: 1,
   toon: { main: [0.4, 0.68, 1], soft: [0.52, 0.76, 1] },
   bloom: { intensity: 0.55, threshold: 0.92 },
+  contactShadow: { color: '#1b3a5c', opacity: 0.34 },
 };
 
 /** Noche: cielo frío, luz direccional tenue, emisión al alza, bandas cel levantadas. */
@@ -116,6 +119,7 @@ const NIGHT: SceneThemeCfg = {
   emissionMultiplier: 2.2,
   toon: { main: [0.5, 0.75, 1], soft: [0.6, 0.82, 1] },
   bloom: { intensity: 0.72, threshold: 0.8 },
+  contactShadow: { color: '#02060c', opacity: 0.55 },
 };
 
 export const SCENE_THEMES: Record<ThemeId, SceneThemeCfg> = { light: LIGHT, night: NIGHT };

@@ -1,5 +1,6 @@
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { ContactShadows, Environment, Lightformer } from '@react-three/drei';
 import type * as THREE from 'three';
 import { CameraRig } from './CameraRig';
 import { Clouds, Ground, Sea } from './Ground';
@@ -13,7 +14,7 @@ import { prefersReduced } from './anim';
 import { getFocus } from './store';
 import { useTheme } from '../../scripts/theme';
 
-/** Da vueltas al modelo conforme haces scroll. */
+/** Da vueltas al modelo conforme haces scroll. Balancea suave en idle. */
 function SpinOnScroll() {
   const g = useRef<THREE.Group>(null!);
   const target = useRef(0);
@@ -30,10 +31,15 @@ function SpinOnScroll() {
     return () => window.removeEventListener('scroll', on);
   }, [reduced]);
 
-  useFrame((_, dt) => {
+  useFrame((state, dt) => {
     if (!g.current) return;
     const k = 1 - Math.pow(0.004, Math.min(dt, 0.05));
     g.current.rotation.y += (target.current - g.current.rotation.y) * k;
+    if (!reduced) {
+      const t = state.clock.getElapsedTime();
+      g.current.rotation.z = Math.sin(t * 0.55) * 0.014;
+      g.current.position.y = Math.sin(t * 0.8) * 0.02;
+    }
   });
 
   return (
@@ -121,6 +127,36 @@ function BloomGate() {
 
 export const HERO_WEBGL_LOST = 'hero:webgl-lost';
 
+/** Sombra suave bajo el carrito: lo ancla a la isla como en un diorama. */
+function Contact() {
+  const cfg = useSceneTheme();
+  return (
+    <ContactShadows
+      position={[0, 0.012, 0]}
+      scale={7}
+      blur={2.4}
+      far={3}
+      resolution={512}
+      opacity={cfg.contactShadow.opacity}
+      color={cfg.contactShadow.color}
+    />
+  );
+}
+
+/**
+ * Reflejos procedurales (sin red): una caja de luz imaginaria alrededor
+ * del carrito para que los materiales del GLB no se vean planos.
+ */
+function Studio() {
+  return (
+    <Environment resolution={64} frames={1}>
+      <Lightformer intensity={1.6} color="#fff6e2" position={[4, 6, 5]} scale={[8, 8, 1]} />
+      <Lightformer intensity={0.7} color="#9adcff" position={[-6, 3, -4]} scale={[8, 8, 1]} />
+      <Lightformer intensity={0.5} color="#ffe9c9" position={[0, -4, 2]} rotation={[Math.PI / 2, 0, 0]} scale={[10, 10, 1]} />
+    </Environment>
+  );
+}
+
 export function Scene() {
   const theme = useTheme();
   const cfg = getSceneTheme(theme);
@@ -149,11 +185,13 @@ export function Scene() {
         <Sky />
         <Lights />
         <Env />
+        <Studio />
 
         <Sea />
         <Ground />
         <Clouds />
         <SpinOnScroll />
+        <Contact />
 
         <CameraRig />
         <BloomGate />

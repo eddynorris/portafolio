@@ -12,12 +12,12 @@ const START_M = new THREE.Vector3(3.4, 7.4, 17);
 const START_AT_M = new THREE.Vector3(0, 1.4, 0);
 
 const HERO_DESKTOP = {
-  pos: new THREE.Vector3(0.3, 2.05, 7.2),
-  at: new THREE.Vector3(-1.15, 1.45, 0),
+  pos: new THREE.Vector3(0.25, 1.9, 4.9),
+  at: new THREE.Vector3(-0.55, 1.35, 0),
 };
 const HERO_MOBILE = {
-  pos: new THREE.Vector3(0, 2.65, 9.7),
-  at: new THREE.Vector3(0, 1.05, 0),
+  pos: new THREE.Vector3(0, 2.2, 7.2),
+  at: new THREE.Vector3(0, 1.15, 0),
 };
 
 const tmpPos = new THREE.Vector3();
