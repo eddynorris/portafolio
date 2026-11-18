@@ -1,5 +1,6 @@
 import { Component, useEffect, useState, type ReactNode } from 'react';
-import { HERO_WEBGL_LOST, Scene } from './scene/Scene';
+import { useProgress } from '@react-three/drei';
+import { HERO_WEBGL_LOST, HERO_READY, Scene } from './scene/Scene';
 
 function hasWebGL(): boolean {
   try {
@@ -53,6 +54,46 @@ class SceneBoundary extends Component<{ fallback: ReactNode; children: ReactNode
   }
 }
 
+/**
+ * Loader de marca mientras baja el carrito: cielo + mar en CSS (nunca un
+ * hueco en blanco) y el porcentaje real de carga.
+ */
+function Loader() {
+  const { progress } = useProgress();
+  const [ready, setReady] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    const on = () => setReady(true);
+    window.addEventListener(HERO_READY, on);
+    // red lenta o algo raro: nunca dejamos el loader pegado
+    const t = window.setTimeout(on, 15000);
+    return () => {
+      window.removeEventListener(HERO_READY, on);
+      window.clearTimeout(t);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const t = window.setTimeout(() => setGone(true), 900);
+    return () => window.clearTimeout(t);
+  }, [ready]);
+
+  if (gone) return null;
+  return (
+    <div className={`heroLoader${ready ? ' is-done' : ''}`} aria-hidden="true">
+      <div className="heroLoader__sky" />
+      <div className="heroLoader__sea" />
+      <div className="heroLoader__card">
+        <span className="heroLoader__lime" />
+        <p>Preparando el ceviche</p>
+        <b>{Math.round(ready ? 100 : Math.min(progress, 99))}%</b>
+      </div>
+    </div>
+  );
+}
+
 export default function HeroScene() {
   const [mode, setMode] = useState<'scene' | 'static' | null>(null);
 
@@ -69,8 +110,11 @@ export default function HeroScene() {
   if (mode === null) return null; // resolvemos tras hidratar (evita SSR/cliente mismatch)
   if (mode === 'static') return <HeroStatic />;
   return (
-    <SceneBoundary fallback={<HeroStatic />}>
-      <Scene />
-    </SceneBoundary>
+    <>
+      <SceneBoundary fallback={<HeroStatic />}>
+        <Scene />
+      </SceneBoundary>
+      <Loader />
+    </>
   );
 }

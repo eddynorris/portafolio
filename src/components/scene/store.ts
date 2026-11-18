@@ -37,3 +37,20 @@ export function subscribe(cb: () => void) {
     store.subs.delete(cb);
   };
 }
+
+/* ------------------------------------------------------------------ */
+/*  Hover compartido (mesh del GLB o pin HTML) + API para enfocar       */
+/* ------------------------------------------------------------------ */
+
+export const hover: { id: HotspotId | null } = { id: null };
+
+/** La registra el picker del GLB (tiene acceso a la cámara y los nodos). */
+export const hotspotApi: { focus: ((id: HotspotId) => void) | null } = { focus: null };
+
+/** Momento (performance.now, en s) en que el carrito apareció: arranca la entrada de cámara. */
+export const intro = { at: -1 };
+
+/** Segundos desde que arrancó la entrada (-1 si aún no carga). */
+export function introElapsed() {
+  return intro.at < 0 ? -1 : performance.now() / 1000 - intro.at;
+}

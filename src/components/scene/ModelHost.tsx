@@ -10,11 +10,15 @@ import {
   useSceneTheme,
   type SceneThemeCfg,
 } from './sceneTheme';
-import { setFocus, type HotspotId } from './store';
+import { getFocus, hotspotApi, hover, intro, setFocus, type HotspotId } from './store';
+import { HotspotPins } from './HotspotPins';
+
+/** Tinte cálido que recibe la pieza del carrito bajo el cursor. */
+const HOVER_GLOW = new THREE.Color('#5a3412');
 import { useTheme } from '../../scripts/theme';
 
 /** Ancho de encuadre por hotspot (unidades de mundo), para el zoom de cámara. */
-const FIT: Record<HotspotId, number> = { proyectos: 2.1, skills: 1.2, redes: 3.6 };
+const FIT: Record<HotspotId, number> = { proyectos: 1.9, skills: 1.75, redes: 3.4 };
 const KNOWN = new Set<HotspotId>(['proyectos', 'skills', 'redes']);
 
 /* ------------------------------------------------------------------ */
@@ -70,17 +74,19 @@ function GlbModel({
   const built = useMemo(() => {
     const root = gltf.scene.clone(true);
     const mats: THREE.MeshStandardMaterial[] = [];
-    const emissive: { mesh: THREE.Mesh; base: THREE.Color; baseI: number }[] = [];
+    const emissive: { mesh: THREE.Mesh; mat: THREE.MeshStandardMaterial; base: THREE.Color; baseI: number; id: HotspotId | null }[] = [];
     const interact = new Map<HotspotId, THREE.Object3D[]>();
 
     root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (mesh.isMesh) {
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
         // clona materiales: la caché de drei conserva los originales
         const clone = (m: THREE.Material) => {
           const c = m.clone() as THREE.MeshStandardMaterial;
           if (c.emissive) {
-            emissive.push({ mesh, base: c.emissive.clone(), baseI: c.emissiveIntensity ?? 1 });
+            emissive.push({ mesh, mat: c, base: c.emissive.clone(), baseI: c.emissiveIntensity ?? 1, id: null });
           }
           return c;
         };
@@ -105,9 +111,41 @@ function GlbModel({
       }
     });
 
+    // a qué hotspot pertenece cada material (para resaltarlo al pasar el mouse)
+    for (const [id, objs] of interact) {
+      for (const obj of objs) {
+        obj.traverse((o) => {
+          for (const e of emissive) if (e.mesh === o) e.id = id;
+        });
+      }
+    }
+
     return { root, mats, emissive, interact };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gltf, cfg.hotspots]);
+
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const scene = useThree((s) => s.scene);
+
+  useEffect(() => {
+    // compila los shaders del carrito en paralelo antes de mostrarlo (sin congelar la página)
+    const root = built.root;
+    let alive = true;
+    root.traverse((o) => o.layers.set(31));
+    const show = () => {
+      if (!alive) return;
+      root.traverse((o) => o.layers.set(0));
+      requestAnimationFrame(() => {
+        if (intro.at < 0) intro.at = performance.now() / 1000;
+        window.dispatchEvent(new Event('hero:ready'));
+      });
+    };
+    gl.compileAsync(root, camera, scene).then(show, show);
+    return () => {
+      alive = false;
+    };
+  }, [built, gl, camera, scene]);
 
   useEffect(() => {
     registerNodes?.(built.interact);
@@ -131,10 +169,12 @@ function GlbModel({
       }
     }
     const em = cfg.emissionMultiplier;
+    const kh = 1 - Math.pow(0.0005, Math.min(dt, 0.05));
     for (const e of built.emissive) {
       const target = e.baseI * em;
-      const mat = e.mesh.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity += (target - mat.emissiveIntensity) * k;
+      e.mat.emissiveIntensity += (target - e.mat.emissiveIntensity) * k;
+      const lit = e.id !== null && hover.id === e.id;
+      e.mat.emissive.lerp(lit ? HOVER_GLOW : e.base, kh);
     }
   });
 
@@ -165,28 +205,46 @@ function GlbPicker({
       const x = ((cx - rect.left) / rect.width) * 2 - 1;
       const y = -((cy - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+      let best: { id: HotspotId; d: number } | null = null;
       for (const [id, objs] of nodes) {
         for (const obj of objs) {
-          if (raycaster.intersectObject(obj, true).length) return { id, obj };
+          const hit = raycaster.intersectObject(obj, true)[0];
+          if (hit && (!best || hit.distance < best.d)) best = { id, d: hit.distance };
         }
       }
-      return null;
+      return best;
     };
 
+    /** Enfoca el centro real de la pieza (los nodos del GLB tienen origen en 0,0,0). */
+    const focus = (id: HotspotId) => {
+      const objs = nodes.get(id);
+      if (!objs?.length) return;
+      const box = new THREE.Box3();
+      objs.forEach((o) => box.expandByObject(o));
+      const center = box.getCenter(new THREE.Vector3());
+      const anchor = objs[0];
+      const offset = anchor.worldToLocal(center.clone());
+      // de frente a la pieza, algo elevado y hacia el lado de la cámara
+      const dir = camera.position.clone().sub(center);
+      dir.y = Math.max(dir.y, 0.25 * dir.length());
+      dir.normalize();
+      setFocus({ id, anchor, offset, dir, fit: FIT[id] });
+    };
+    hotspotApi.focus = focus;
+
     const onMove = (e: PointerEvent) => {
+      if (getFocus()) return;
       const hit = pick(e.clientX, e.clientY);
+      hover.id = hit?.id ?? null;
       document.body.style.cursor = hit ? 'pointer' : '';
     };
     const onDown = (e: PointerEvent) => {
+      if (getFocus()) return;
       const hit = pick(e.clientX, e.clientY);
-      if (!hit) return;
-      const anchor = hit.obj;
-      const world = new THREE.Vector3(0, 0, 0);
-      anchor.localToWorld(world);
-      const dir = camera.position.clone().sub(world).normalize();
-      setFocus({ id: hit.id, anchor, offset: world.clone().sub(anchor.getWorldPosition(new THREE.Vector3())), dir, fit: FIT[hit.id] });
+      if (hit) focus(hit.id);
     };
     const onLeave = () => {
+      hover.id = null;
       document.body.style.cursor = '';
     };
 
@@ -198,6 +256,7 @@ function GlbPicker({
       el.removeEventListener('pointerdown', onDown);
       el.removeEventListener('pointerleave', onLeave);
       document.body.style.cursor = '';
+      if (hotspotApi.focus === focus) hotspotApi.focus = null;
     };
   }, [nodes, gl, raycaster, camera, offset]);
 
@@ -274,6 +333,7 @@ export function ModelHost({ offset = 0 }: { offset?: number }) {
         );
       })}
       <GlbPicker nodes={nodes} offset={offset} />
+      <HotspotPins nodes={nodes} />
     </>
   );
 }
@@ -291,8 +351,5 @@ function preloadAll() {
     }
   }
 }
-if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-  (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(preloadAll);
-} else if (typeof window !== 'undefined') {
-  setTimeout(preloadAll, 2000);
-}
+// arranca la descarga del GLB en cuanto carga este módulo (drei la deduplica con useGLTF)
+if (typeof window !== 'undefined') preloadAll();

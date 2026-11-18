@@ -1,45 +1,50 @@
-import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { ContactShadows, Environment, Lightformer } from '@react-three/drei';
+import { Sparkles } from '@react-three/drei';
+import {
+  CanvasTexture,
+  Color,
+  DoubleSide,
+  Mesh,
+  MeshBasicMaterial,
+  PMREMGenerator,
+  PlaneGeometry,
+  Scene as Scene3,
+  type WebGLRenderer,
+} from 'three';
 import type * as THREE from 'three';
 import { CameraRig } from './CameraRig';
-import { Clouds, Ground, Sea } from './Ground';
 import { Sky } from './Sky';
 import { Lights } from './Lights';
 import { Env } from './Env';
 import { ModelHost } from './ModelHost';
 import { SceneThemeCtx, getSceneTheme, useSceneTheme } from './sceneTheme';
-import { attachPointer, scrollY } from './pointer';
+import { attachPointer } from './pointer';
 import { prefersReduced } from './anim';
-import { getFocus } from './store';
 import { useTheme } from '../../scripts/theme';
+import { NightMixDriver } from './beach/nightMix';
+import { Water } from './beach/Water';
+import { Island } from './beach/Island';
+import { Palms } from './beach/Palms';
+import { Boats, Caballitos, Crates, Pier, StringLights, Umbrella, WarmLight } from './beach/Props';
+import { Cliffs, Islets, Lighthouse } from './beach/Backdrop';
+import { Gulls, Pelicans } from './beach/Birds';
+import { Clouds } from './beach/Clouds';
 
-/** Da vueltas al modelo conforme haces scroll. Balancea suave en idle. */
-function SpinOnScroll() {
+/** Balanceo suave del carrito en idle (la cámara se encarga del scroll). */
+function CartIdle() {
   const g = useRef<THREE.Group>(null!);
-  const target = useRef(0);
   const reduced = prefersReduced();
 
   useEffect(() => {
     attachPointer();
-    const on = () => {
-      if (getFocus()) return;
-      target.current = reduced ? 0 : -scrollY() * 0.0022;
-    };
-    on();
-    window.addEventListener('scroll', on, { passive: true });
-    return () => window.removeEventListener('scroll', on);
-  }, [reduced]);
+  }, []);
 
-  useFrame((state, dt) => {
-    if (!g.current) return;
-    const k = 1 - Math.pow(0.004, Math.min(dt, 0.05));
-    g.current.rotation.y += (target.current - g.current.rotation.y) * k;
-    if (!reduced) {
-      const t = state.clock.getElapsedTime();
-      g.current.rotation.z = Math.sin(t * 0.55) * 0.014;
-      g.current.position.y = Math.sin(t * 0.8) * 0.02;
-    }
+  useFrame((state) => {
+    if (!g.current || reduced) return;
+    const t = state.clock.getElapsedTime();
+    g.current.rotation.z = Math.sin(t * 0.55) * 0.008;
+    g.current.rotation.y = Math.sin(t * 0.21) * 0.025;
   });
 
   return (
@@ -49,126 +54,162 @@ function SpinOnScroll() {
   );
 }
 
-/** Pausa el render cuando el hero sale del viewport (no en móviles reducidos). */
-function FrameloopPause() {
-  const gl = useThree((s) => s.gl);
-  const setFrameloop = useThree((s) => s.setFrameloop);
-  useEffect(() => {
-    const el = gl.domElement.parentElement;
-    if (!el || typeof IntersectionObserver === 'undefined') return;
-    const io = new IntersectionObserver(
-      ([e]) => setFrameloop(e.isIntersecting ? 'always' : 'never'),
-      { threshold: 0 },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [gl, setFrameloop]);
-  return null;
-}
+export const HERO_WEBGL_LOST = 'hero:webgl-lost';
+/** Se emite cuando el modelo del carrito ya está en escena (para quitar el loader). */
+export const HERO_READY = 'hero:ready';
 
-/** Bloom + viñeta, cargados en diferido y solo en escritorio sin reduced-motion. */
-const PostFX = lazy(async () => {
-  const m = await import('@react-three/postprocessing');
-  function FX() {
-    const cfg = useSceneTheme();
-    return (
-      <m.EffectComposer multisampling={4}>
-        <m.Bloom
-          mipmapBlur
-          intensity={cfg.bloom.intensity}
-          luminanceThreshold={cfg.bloom.threshold}
-          luminanceSmoothing={0.2}
-        />
-        <m.Vignette offset={0.26} darkness={0.42} />
-      </m.EffectComposer>
-    );
-  }
-  return { default: FX };
-});
-
-/** Si el PostFX revienta (GPU/ANGLE viejo), la escena sigue sin bloom. */
-class FxBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  componentDidCatch(err: unknown) {
-    console.warn('[hero] PostFX deshabilitado tras un error:', err);
-  }
-  render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
-
-function BloomGate() {
-  const width = useThree((s) => s.size.width);
-  const reduced = prefersReduced();
-  const [on, setOn] = useState(false);
-  useEffect(() => {
-    if (reduced || width < 900) {
-      setOn(false);
-      return;
-    }
-    const ric = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-    const id = ric ? ric(() => setOn(true)) : window.setTimeout(() => setOn(true), 350);
-    return () => {
-      if (!ric && id) window.clearTimeout(id as number);
-    };
-  }, [reduced, width]);
-  if (!on) return null;
+/**
+ * Sombra de contacto: mancha suave bajo el carrito (oclusión ambiental falsa).
+ * Las sombras "reales" las pone la luz principal; esto solo lo asienta.
+ */
+function Contact() {
+  const cfg = useSceneTheme();
+  const tex = useMemo(() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const grd = g.createRadialGradient(64, 64, 4, 64, 64, 64);
+    grd.addColorStop(0, 'rgba(255,255,255,1)');
+    grd.addColorStop(0.45, 'rgba(255,255,255,0.55)');
+    grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 128, 128);
+    return new CanvasTexture(c);
+  }, []);
   return (
-    <FxBoundary>
-      <Suspense fallback={null}>
-        <PostFX />
-      </Suspense>
-    </FxBoundary>
+    <mesh position={[0, 0.004, 0.02]} rotation={[-Math.PI / 2, 0, 0]} scale={[2.3, 1.4, 1]} renderOrder={2}>
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
+        alphaMap={tex}
+        color={cfg.contactShadow.color}
+        transparent
+        opacity={cfg.contactShadow.opacity * 1.3}
+        depthWrite={false}
+        polygonOffset
+        polygonOffsetFactor={-4}
+      />
+    </mesh>
   );
 }
 
-export const HERO_WEBGL_LOST = 'hero:webgl-lost';
+/**
+ * Reflejos procedurales (sin red): una caja de luz imaginaria alrededor del
+ * carrito, horneada a un PMREM de forma síncrona al crear el canvas. Así el
+ * entorno existe antes de compilar cualquier shader y no hay recompilaciones.
+ */
+function bakeStudio(gl: WebGLRenderer) {
+  const room = new Scene3();
+  const add = (color: string, intensity: number, pos: [number, number, number], scale: [number, number], rotX = 0) => {
+    const m = new Mesh(
+      new PlaneGeometry(1, 1),
+      new MeshBasicMaterial({ color: new Color(color).multiplyScalar(intensity), side: DoubleSide }),
+    );
+    m.position.set(...pos);
+    m.scale.set(scale[0], scale[1], 1);
+    m.rotation.x = rotX;
+    m.lookAt(0, 0, 0);
+    if (rotX) m.rotation.x = rotX;
+    room.add(m);
+  };
+  room.background = new Color('#2a3140');
+  add('#fff6e2', 1.6, [4, 6, 5], [8, 8]);
+  add('#9adcff', 0.7, [-6, 3, -4], [8, 8]);
+  add('#ffe9c9', 0.5, [0, -4, 2], [10, 10], Math.PI / 2);
+  const pmrem = new PMREMGenerator(gl);
+  const rt = pmrem.fromScene(room, 0.02);
+  pmrem.dispose();
+  return rt.texture;
+}
 
-/** Sombra suave bajo el carrito: lo ancla a la isla como en un diorama. */
-function Contact() {
-  const cfg = useSceneTheme();
+/** Brisa: motas de arena de día, luciérnagas cálidas de noche. */
+function Breeze({ night, mobile }: { night: boolean; mobile: boolean }) {
+  if (prefersReduced()) return null;
   return (
-    <ContactShadows
-      position={[0, 0.012, 0]}
-      scale={7}
-      blur={2.4}
-      far={3}
-      resolution={512}
-      opacity={cfg.contactShadow.opacity}
-      color={cfg.contactShadow.color}
+    <Sparkles
+      count={mobile ? 24 : 50}
+      scale={[9, 3.2, 7]}
+      position={[0, 1.5, 0.5]}
+      size={night ? 3.2 : 2.2}
+      speed={0.25}
+      opacity={night ? 0.9 : 0.55}
+      color={night ? '#ffcf7a' : '#fff3c4'}
+      noise={1.2}
     />
   );
 }
 
 /**
- * Reflejos procedurales (sin red): una caja de luz imaginaria alrededor
- * del carrito para que los materiales del GLB no se vean planos.
+ * Monta su contenido en una capa que la cámara no ve, compila los shaders
+ * en paralelo (KHR_parallel_shader_compile vía compileAsync) y recién
+ * entonces lo muestra: así la primera visita no congela la página.
  */
-function Studio() {
+function Precompiled({ children }: { children: ReactNode }) {
+  const g = useRef<THREE.Group>(null!);
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const scene = useThree((s) => s.scene);
+
+  useEffect(() => {
+    const root = g.current;
+    if (!root) return;
+    let alive = true;
+    const HIDDEN = 31;
+    root.traverse((o) => o.layers.set(HIDDEN));
+    const show = () => {
+      if (!alive) return;
+      root.traverse((o) => o.layers.set(0));
+    };
+    // da un frame para que los hijos creen sus materiales/geometrías
+    const id = requestAnimationFrame(() => {
+      gl.compileAsync(root, camera, scene).then(show, show);
+    });
+    return () => {
+      alive = false;
+      cancelAnimationFrame(id);
+    };
+  }, [gl, camera, scene]);
+
+  return <group ref={g}>{children}</group>;
+}
+
+function Beach({ night, mobile }: { night: boolean; mobile: boolean }) {
   return (
-    <Environment resolution={64} frames={1}>
-      <Lightformer intensity={1.6} color="#fff6e2" position={[4, 6, 5]} scale={[8, 8, 1]} />
-      <Lightformer intensity={0.7} color="#9adcff" position={[-6, 3, -4]} scale={[8, 8, 1]} />
-      <Lightformer intensity={0.5} color="#ffe9c9" position={[0, -4, 2]} rotation={[Math.PI / 2, 0, 0]} scale={[10, 10, 1]} />
-    </Environment>
+    <>
+      <Water />
+      <Island />
+      <Palms />
+      <Caballitos />
+      <Crates />
+      <Umbrella />
+      <Pier />
+      <Boats />
+      <StringLights />
+      <Cliffs />
+      <Islets />
+      <Lighthouse />
+      <Clouds />
+      <Pelicans />
+      <Gulls />
+      <Breeze night={night} mobile={mobile} />
+    </>
   );
 }
 
 export function Scene() {
   const theme = useTheme();
   const cfg = getSceneTheme(theme);
+  const [mobile] = useState(() => typeof window !== 'undefined' && window.innerWidth < 900);
 
   return (
     <Canvas
       flat
-      dpr={[1, 2]}
+      shadows="percentage"
+      dpr={mobile ? [1, 1.6] : [1, 2]}
       gl={{ antialias: true, alpha: false }}
-      camera={{ fov: 36, near: 0.1, far: 300, position: [4, 11, 26] }}
+      camera={{ fov: 36, near: 0.1, far: 400, position: [9, 11, 19] }}
       style={{ position: 'absolute', inset: 0 }}
       onCreated={({ gl, scene }) => {
+        scene.environment = bakeStudio(gl);
         if (import.meta.env.DEV) {
           (window as unknown as Record<string, unknown>).__heroGL = gl;
           (window as unknown as Record<string, unknown>).__heroScene = scene;
@@ -182,20 +223,20 @@ export function Scene() {
       }}
     >
       <SceneThemeCtx.Provider value={cfg}>
+        <NightMixDriver />
         <Sky />
-        <Lights />
+        <Lights mobile={mobile} />
+        <WarmLight />
         <Env />
-        <Studio />
 
-        <Sea />
-        <Ground />
-        <Clouds />
-        <SpinOnScroll />
+        <Precompiled>
+          <Beach night={cfg.night > 0.5} mobile={mobile} />
+        </Precompiled>
+
+        <CartIdle />
         <Contact />
 
         <CameraRig />
-        <BloomGate />
-        <FrameloopPause />
       </SceneThemeCtx.Provider>
     </Canvas>
   );

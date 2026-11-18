@@ -27,9 +27,22 @@ export type LightsCfg = {
 
 export type SkyCfg = { top: string; mid: string; bottom: string; sun: number };
 
+/** Paleta del mar estilizado (shader de agua). */
+export type WaterCfg = {
+  shallow: string;
+  mid: string;
+  deep: string;
+  horizon: string;
+  foam: string;
+  glitter: string;
+};
+
 export type SceneThemeCfg = {
   model: ModelCfg;
+  /** 0 = día, 1 = noche (se interpola en nightMix). */
+  night: number;
   sky: SkyCfg;
+  water: WaterCfg;
   /** Niebla; null = sin niebla. */
   fog: { color: string; near: number; far: number } | null;
   lights: LightsCfg;
@@ -71,8 +84,17 @@ const LIGHT: SceneThemeCfg = {
     rotation: [0, 0, 0],
   },
   hotspots: CART_HOTSPOTS,
+  night: 0,
   sky: { top: '#2f9fe0', mid: '#8fdcff', bottom: '#ffe9c9', sun: 1 },
-  fog: null,
+  water: {
+    shallow: '#62e6d3',
+    mid: '#26b2e6',
+    deep: '#1572c4',
+    horizon: '#bfe6f2',
+    foam: '#ffffff',
+    glitter: '#fff3d2',
+  },
+  fog: { color: '#d4eefb', near: 45, far: 190 },
   lights: {
     ambient: 0.5,
     hemiSky: '#fff4dd',
@@ -101,8 +123,17 @@ const NIGHT: SceneThemeCfg = {
     rotation: [0, 0, 0],
   },
   hotspots: CART_HOTSPOTS,
+  night: 1,
   sky: { top: '#05060f', mid: '#0d1b33', bottom: '#1a2b4a', sun: 0.16 },
-  fog: { color: '#0a1424', near: 22, far: 70 },
+  water: {
+    shallow: '#1f6878',
+    mid: '#113d62',
+    deep: '#0a2341',
+    horizon: '#1a2b4a',
+    foam: '#bcd6ff',
+    glitter: '#dce7ff',
+  },
+  fog: { color: '#0d1a2e', near: 34, far: 150 },
   lights: {
     ambient: 0.3,
     hemiSky: '#243a5e',

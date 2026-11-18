@@ -5,9 +5,9 @@ import { useSceneTheme } from './sceneTheme';
 
 /**
  * Rig de luces que interpola colores e intensidades hacia el tema activo.
- * Las posiciones se toman directo de la config (no cambian entre temas por defecto).
+ * La luz principal proyecta sombras sobre la arena (palmeras, totoras, carrito).
  */
-export function Lights() {
+export function Lights({ mobile = false }: { mobile?: boolean }) {
   const cfg = useSceneTheme();
   const amb = useRef<THREE.AmbientLight>(null!);
   const hemi = useRef<THREE.HemisphereLight>(null!);
@@ -19,10 +19,6 @@ export function Lights() {
     hemiGround: new THREE.Color(cfg.lights.hemiGround),
     keyColor: new THREE.Color(cfg.lights.keyColor),
     fillColor: new THREE.Color(cfg.lights.fillColor),
-    ambient: cfg.lights.ambient,
-    hemi: cfg.lights.hemi,
-    key: cfg.lights.key,
-    fill: cfg.lights.fill,
   });
 
   useFrame((_, dt) => {
@@ -53,20 +49,30 @@ export function Lights() {
     }
   });
 
+  const size = mobile ? 1024 : 2048;
+
   return (
     <>
       <ambientLight ref={amb} intensity={cfg.lights.ambient} />
-      <hemisphereLight
-        ref={hemi}
-        args={[cfg.lights.hemiSky, cfg.lights.hemiGround, cfg.lights.hemi]}
-      />
-      <directionalLight ref={key} position={cfg.lights.keyPos} intensity={cfg.lights.key} color={cfg.lights.keyColor} />
+      <hemisphereLight ref={hemi} args={[cfg.lights.hemiSky, cfg.lights.hemiGround, cfg.lights.hemi]} />
       <directionalLight
-        ref={fill}
-        position={cfg.lights.fillPos}
-        intensity={cfg.lights.fill}
-        color={cfg.lights.fillColor}
+        ref={key}
+        position={cfg.lights.keyPos}
+        intensity={cfg.lights.key}
+        color={cfg.lights.keyColor}
+        castShadow
+        shadow-mapSize={[size, size]}
+        shadow-bias={-0.0004}
+        shadow-normalBias={0.03}
+        shadow-radius={4}
+        shadow-camera-left={-8}
+        shadow-camera-right={8}
+        shadow-camera-top={8}
+        shadow-camera-bottom={-8}
+        shadow-camera-near={1}
+        shadow-camera-far={30}
       />
+      <directionalLight ref={fill} position={cfg.lights.fillPos} intensity={cfg.lights.fill} color={cfg.lights.fillColor} />
     </>
   );
 }
