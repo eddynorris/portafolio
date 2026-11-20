@@ -30,6 +30,7 @@ import { Boats, Caballitos, Crates, Pier, StringLights, Umbrella, WarmLight } fr
 import { Cliffs, Islets, Lighthouse } from './beach/Backdrop';
 import { Gulls, Pelicans } from './beach/Birds';
 import { Clouds } from './beach/Clouds';
+import { World } from './beach/World';
 
 /** Balanceo suave del carrito en idle (la cámara se encarga del scroll). */
 function CartIdle() {
@@ -172,21 +173,30 @@ function Precompiled({ children }: { children: ReactNode }) {
   return <group ref={g}>{children}</group>;
 }
 
+/** Fondo procedural antiguo: sólo si el diorama de Blender no carga. */
+function ProceduralWorld() {
+  return (
+    <>
+      <Island />
+      <Palms />
+      <Cliffs />
+      <Islets />
+      <Lighthouse />
+    </>
+  );
+}
+
 function Beach({ night, mobile }: { night: boolean; mobile: boolean }) {
   return (
     <>
       <Water />
-      <Island />
-      <Palms />
+      <World fallback={<ProceduralWorld />} />
       <Caballitos />
       <Crates />
       <Umbrella />
       <Pier />
       <Boats />
       <StringLights />
-      <Cliffs />
-      <Islets />
-      <Lighthouse />
       <Clouds />
       <Pelicans />
       <Gulls />

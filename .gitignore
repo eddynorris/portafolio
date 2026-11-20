@@ -27,3 +27,8 @@ pnpm-debug.log*
 devlog.txt
 scripts/shots/
 scripts/shots-live/
+
+# Diorama Blender: capturas, texturas generadas y cache de Python
+scripts/blender/costa_verde/shots/
+scripts/blender/costa_verde/textures/
+scripts/blender/**/__pycache__/

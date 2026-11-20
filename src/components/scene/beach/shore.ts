@@ -36,6 +36,64 @@ const smooth = (a: number, b: number, x: number) => {
   return t * t * (3 - 2 * t);
 };
 
+/* ------------------------------------------------------------------ */
+/*  Costa Verde (diorama de Blender): línea de agua de la playa         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Coeficientes de la línea de agua de la playa de la Costa Verde, en función de θ.
+ * Deben coincidir con `coast_r` de scripts/blender/costa_verde/common.py.
+ * La bahía se cierra hacia la derecha (u → 1): R baja de 70 a 61.
+ */
+export const COAST = {
+  r0: 70,
+  close: 9,
+  u0: 0.15,
+  u1: 1.0,
+  a: [2.2, 1.1, 0.6] as const,
+  k: [3, 7, 13] as const,
+  p: [0.4, 2.0, 1.0] as const,
+  /** medio arco en radianes (la costa va de -π/2 - span a -π/2 + span) */
+  span: 1.5,
+  /** ancho de la playa (línea de agua → acera) = w0 + w1·sin(5θ + 1.3) */
+  w0: 4.5,
+  w1: 1.5,
+  /** ancho de la pista y altura sobre y = 0 */
+  roadW: 7,
+  roadY: SEA_Y + 0.9,
+};
+
+/** Posición normalizada a lo largo de la costa: -1 izquierda … 0 fondo … 1 derecha. */
+export function coastU(theta: number): number {
+  return (theta + Math.PI / 2) / COAST.span;
+}
+
+/** Radio de la línea de agua de la playa en θ (convención atan2(z, x)). */
+export function coastR(theta: number): number {
+  const { r0, close, u0, u1, a, k, p } = COAST;
+  let r = r0 - close * smooth(u0, u1, coastU(theta));
+  for (let i = 0; i < 3; i++) r += a[i] * Math.sin(k[i] * theta + p[i]);
+  return r;
+}
+
+/** Radio del borde interior (mar) de la pista en θ. */
+export function roadR0(theta: number): number {
+  return coastR(theta) + COAST.w0 + COAST.w1 * Math.sin(5 * theta + 1.3);
+}
+
+/** Igual que coastR y coastU en GLSL (pegar dentro del shader). */
+export const COAST_GLSL = /* glsl */ `
+float coastU(float th) { return (th + 1.5707963) / ${COAST.span.toFixed(3)}; }
+float coastR(float th) {
+  float s = clamp((coastU(th) - ${COAST.u0.toFixed(3)}) / ${(COAST.u1 - COAST.u0).toFixed(3)}, 0.0, 1.0);
+  s = s * s * (3.0 - 2.0 * s);
+  return ${COAST.r0.toFixed(3)} - ${COAST.close.toFixed(3)} * s
+    + ${COAST.a[0].toFixed(3)} * sin(${COAST.k[0].toFixed(1)} * th + ${COAST.p[0].toFixed(3)})
+    + ${COAST.a[1].toFixed(3)} * sin(${COAST.k[1].toFixed(1)} * th + ${COAST.p[1].toFixed(3)})
+    + ${COAST.a[2].toFixed(3)} * sin(${COAST.k[2].toFixed(1)} * th + ${COAST.p[2].toFixed(3)});
+}
+`;
+
 /** Hash determinista 2D → [0,1). */
 export function hash2(x: number, y: number) {
   const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
